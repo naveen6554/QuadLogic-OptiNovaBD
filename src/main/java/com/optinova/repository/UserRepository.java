@@ -10,11 +10,13 @@ import java.util.Optional;
  * Spring Data JPA Repository interface for User entity data operations.
  */
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Integer> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByUsername(String username);
+
     boolean existsByEmail(String email);
 
-    Optional<User> findByEmailAndIsVerifiedTrue(String email);
+    boolean existsByUsername(String username);
 }

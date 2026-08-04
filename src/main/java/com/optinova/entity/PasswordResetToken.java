@@ -10,8 +10,9 @@ import java.time.LocalDateTime;
  * JPA Entity mapping to the 'password_reset_tokens' table.
  * Stores UUID password reset tokens generated when users request a password recovery.
  */
-@Entity
-@Table(name = "password_reset_tokens")
+/**
+ * Note: Non-JPA POJO. Excluded from JPA entity scanning to match official 8 database tables.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

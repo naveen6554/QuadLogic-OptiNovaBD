@@ -1,7 +1,6 @@
 package com.optinova.dto;
 
 import com.optinova.entity.enums.OrderStatus;
-import com.optinova.entity.enums.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,13 +19,10 @@ import java.util.List;
 @Builder
 public class OrderDto {
 
-    private Long id;
-    private String orderNumber;
-    private String shippingAddress;
-    private String paymentMethod;
-    private OrderStatus orderStatus;
-    private PaymentStatus paymentStatus;
+    private String orderId;
+    private Integer userId;
     private BigDecimal totalAmount;
+    private OrderStatus status;
     private List<OrderItemDto> orderItems;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

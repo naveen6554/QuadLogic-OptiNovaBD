@@ -10,8 +10,9 @@ import java.time.LocalDateTime;
  * JPA Entity mapping to the 'otp_verifications' table.
  * Stores generated OTP codes for email verification and password reset workflows.
  */
-@Entity
-@Table(name = "otp_verifications")
+/**
+ * Note: Non-JPA POJO for OTP handling. Excluded from JPA entity scanning to match the official 8 database tables.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

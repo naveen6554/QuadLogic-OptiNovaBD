@@ -1,7 +1,6 @@
 package com.optinova.entity;
 
 import com.optinova.entity.enums.OrderStatus;
-import com.optinova.entity.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -13,8 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * JPA Entity mapping to the 'orders' table in the 'e-commerce' database.
- * Stores customer order records, payment statuses, and shipping addresses.
+ * JPA Entity mapping to the 'orders' table in the database.
+ * Columns: order_id, user_id, total_amount, status, created_at, updated_at
  */
 @Entity
 @Table(name = "orders")
@@ -26,11 +25,8 @@ import java.util.List;
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "order_number", nullable = false, unique = true, length = 50)
-    private String orderNumber;
+    @Column(name = "order_id", nullable = false, length = 255)
+    private String orderId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -39,19 +35,10 @@ public class Order {
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(name = "shipping_address", nullable = false, columnDefinition = "TEXT")
-    private String shippingAddress;
-
-    @Column(name = "payment_method", nullable = false, length = 50)
-    private String paymentMethod;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status", nullable = false, length = 20)
-    private PaymentStatus paymentStatus;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "order_status", nullable = false, length = 20)
-    private OrderStatus orderStatus;
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private OrderStatus status = OrderStatus.PENDING;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -64,4 +51,20 @@ public class Order {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public String getId() {
+        return orderId;
+    }
+
+    public void setId(String id) {
+        this.orderId = id;
+    }
+
+    public OrderStatus getOrderStatus() {
+        return status;
+    }
+
+    public void setOrderStatus(OrderStatus status) {
+        this.status = status;
+    }
 }

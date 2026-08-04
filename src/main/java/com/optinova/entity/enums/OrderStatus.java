@@ -1,12 +1,11 @@
 package com.optinova.entity.enums;
 
 /**
- * Enumeration representing customer order fulfillment status lifecycle.
+ * Enumeration representing order status lifecycle.
+ * Aligns with database constraint ENUM('PENDING', 'SUCCESS', 'FAILED').
  */
 public enum OrderStatus {
     PENDING,
-    PROCESSING,
-    SHIPPED,
-    DELIVERED,
-    CANCELLED
+    SUCCESS,
+    FAILED
 }

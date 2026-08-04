@@ -57,28 +57,26 @@ class CartServiceTest {
     @BeforeEach
     void setUp() {
         user = User.builder()
-                .id(1L)
+                .userId(1)
                 .email("user@example.com")
                 .build();
 
         product = Product.builder()
-                .id(10L)
+                .productId(10)
                 .name("Polarized Glasses")
                 .price(new BigDecimal("100.00"))
-                .stockQuantity(15)
-                .isActive(true)
+                .stock(15)
                 .build();
 
         cartItem = CartItem.builder()
-                .id(100L)
+                .id(100)
                 .user(user)
                 .product(product)
                 .quantity(2)
-                .totalPrice(new BigDecimal("200.00"))
                 .build();
 
         addToCartRequest = AddToCartRequest.builder()
-                .productId(10L)
+                .productId(10)
                 .quantity(2)
                 .build();
 
@@ -90,10 +88,10 @@ class CartServiceTest {
     @Test
     @DisplayName("Should Retrieve User Cart Successfully")
     void testGetUserCartSuccess() {
-        when(userRepository.existsById(1L)).thenReturn(true);
-        when(cartItemRepository.findByUserId(1L)).thenReturn(List.of(cartItem));
+        when(userRepository.existsById(1)).thenReturn(true);
+        when(cartItemRepository.findByUserUserId(1)).thenReturn(List.of(cartItem));
 
-        CartResponse response = cartService.getUserCart(1L);
+        CartResponse response = cartService.getUserCart(1);
 
         assertNotNull(response);
         assertEquals(1, response.getItems().size());
@@ -104,13 +102,13 @@ class CartServiceTest {
     @Test
     @DisplayName("Should Add Item To Cart Successfully")
     void testAddItemToCartSuccess() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(productRepository.findById(10L)).thenReturn(Optional.of(product));
-        when(cartItemRepository.findByUserIdAndProductId(1L, 10L)).thenReturn(Optional.empty());
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(productRepository.findById(10)).thenReturn(Optional.of(product));
+        when(cartItemRepository.findByUserUserIdAndProductProductId(1, 10)).thenReturn(Optional.empty());
         when(cartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
-        when(cartItemRepository.findByUserId(1L)).thenReturn(List.of(cartItem));
+        when(cartItemRepository.findByUserUserId(1)).thenReturn(List.of(cartItem));
 
-        CartResponse response = cartService.addItemToCart(1L, addToCartRequest);
+        CartResponse response = cartService.addItemToCart(1, addToCartRequest);
 
         assertNotNull(response);
         assertEquals(1, response.getItems().size());
@@ -120,18 +118,32 @@ class CartServiceTest {
     @Test
     @DisplayName("Should Throw BadRequestException when Requested Quantity Exceeds Stock")
     void testAddItemInsufficientStock() {
-        product.setStockQuantity(1);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(productRepository.findById(10L)).thenReturn(Optional.of(product));
+        product.setStock(1);
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(productRepository.findById(10)).thenReturn(Optional.of(product));
 
-        assertThrows(BadRequestException.class, () -> cartService.addItemToCart(1L, addToCartRequest));
+        assertThrows(BadRequestException.class, () -> cartService.addItemToCart(1, addToCartRequest));
+    }
+
+    @Test
+    @DisplayName("Should Update Cart Item Quantity Successfully")
+    void testUpdateCartItemQuantitySuccess() {
+        when(userRepository.existsById(1)).thenReturn(true);
+        when(cartItemRepository.findById(100)).thenReturn(Optional.of(cartItem));
+        when(cartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
+        when(cartItemRepository.findByUserUserId(1)).thenReturn(List.of(cartItem));
+
+        CartResponse response = cartService.updateCartItemQuantity(1, 100, updateCartItemRequest);
+
+        assertNotNull(response);
+        verify(cartItemRepository, times(1)).save(cartItem);
     }
 
     @Test
     @DisplayName("Should Throw ResourceNotFoundException when User ID Invalid")
     void testGetUserCartUserNotFound() {
-        when(userRepository.existsById(99L)).thenReturn(false);
+        when(userRepository.existsById(99)).thenReturn(false);
 
-        assertThrows(ResourceNotFoundException.class, () -> cartService.getUserCart(99L));
+        assertThrows(ResourceNotFoundException.class, () -> cartService.getUserCart(99));
     }
 }

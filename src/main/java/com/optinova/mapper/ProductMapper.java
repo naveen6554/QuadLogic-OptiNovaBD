@@ -30,31 +30,16 @@ public class ProductMapper {
                 ? product.getImages().stream().map(ProductImage::getImageUrl).collect(Collectors.toList())
                 : Collections.emptyList();
 
-        String primaryImageUrl = (product.getImages() != null)
-                ? product.getImages().stream()
-                .filter(ProductImage::isPrimary)
-                .map(ProductImage::getImageUrl)
-                .findFirst()
-                .orElse(!imageUrls.isEmpty() ? imageUrls.get(0) : null)
-                : null;
-
         return ProductDto.builder()
-                .id(product.getId())
+                .productId(product.getProductId())
                 .name(product.getName())
                 .description(product.getDescription())
-                .brand(product.getBrand())
-                .frameType(product.getFrameType())
-                .frameShape(product.getFrameShape())
-                .gender(product.getGender())
                 .price(product.getPrice())
-                .discountPrice(product.getDiscountPrice())
-                .stockQuantity(product.getStockQuantity())
-                .isFeatured(product.isFeatured())
-                .isActive(product.isActive())
+                .stock(product.getStock())
                 .category(categoryMapper.toDto(product.getCategory()))
-                .primaryImageUrl(primaryImageUrl)
                 .imageUrls(imageUrls)
                 .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
                 .build();
     }
 
@@ -66,27 +51,16 @@ public class ProductMapper {
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
-                .brand(request.getBrand())
-                .frameType(request.getFrameType())
-                .frameShape(request.getFrameShape())
-                .gender(request.getGender())
                 .price(request.getPrice())
-                .discountPrice(request.getDiscountPrice())
-                .stockQuantity(request.getStockQuantity())
-                .isFeatured(request.isFeatured())
-                .isActive(request.isActive())
+                .stock(request.getStock())
                 .category(category)
                 .build();
 
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            List<ProductImage> images = request.getImageUrls().stream().map(url -> {
-                boolean isFirst = request.getImageUrls().indexOf(url) == 0;
-                return ProductImage.builder()
-                        .imageUrl(url)
-                        .isPrimary(isFirst)
-                        .product(product)
-                        .build();
-            }).collect(Collectors.toList());
+            List<ProductImage> images = request.getImageUrls().stream().map(url -> ProductImage.builder()
+                    .imageUrl(url)
+                    .product(product)
+                    .build()).collect(Collectors.toList());
             product.setImages(images);
         }
 
@@ -100,15 +74,8 @@ public class ProductMapper {
 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
-        product.setBrand(request.getBrand());
-        product.setFrameType(request.getFrameType());
-        product.setFrameShape(request.getFrameShape());
-        product.setGender(request.getGender());
         product.setPrice(request.getPrice());
-        product.setDiscountPrice(request.getDiscountPrice());
-        product.setStockQuantity(request.getStockQuantity());
-        product.setFeatured(request.isFeatured());
-        product.setActive(request.isActive());
+        product.setStock(request.getStock());
         product.setCategory(category);
     }
 }

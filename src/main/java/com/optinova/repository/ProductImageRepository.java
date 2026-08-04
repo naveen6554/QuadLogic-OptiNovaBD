@@ -10,9 +10,9 @@ import java.util.List;
  * Spring Data JPA Repository interface for ProductImage entity.
  */
 @Repository
-public interface ProductImageRepository extends JpaRepository<ProductImage, Long> {
+public interface ProductImageRepository extends JpaRepository<ProductImage, Integer> {
 
-    List<ProductImage> findByProductId(Long productId);
+    List<ProductImage> findByProductProductId(Integer productId);
 
-    void deleteByProductId(Long productId);
+    void deleteByProductProductId(Integer productId);
 }

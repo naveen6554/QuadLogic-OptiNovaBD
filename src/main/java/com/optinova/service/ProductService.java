@@ -6,7 +6,6 @@ import com.optinova.dto.ProductDto;
 import com.optinova.dto.ProductRequest;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * Service interface defining Product management, search, filtering, and pagination contracts.
@@ -15,21 +14,17 @@ public interface ProductService {
 
     PageResponse<ProductDto> getAllProducts(int pageNo, int pageSize, String sortBy, String sortDir);
 
-    ProductDto getProductById(Long id);
+    ProductDto getProductById(Integer id);
 
     PageResponse<ProductDto> searchProducts(String keyword, int pageNo, int pageSize, String sortBy, String sortDir);
 
-    PageResponse<ProductDto> getProductsByCategory(Long categoryId, int pageNo, int pageSize, String sortBy, String sortDir);
+    PageResponse<ProductDto> getProductsByCategory(Integer categoryId, int pageNo, int pageSize, String sortBy, String sortDir);
 
     PageResponse<ProductDto> filterProductsByPrice(BigDecimal minPrice, BigDecimal maxPrice, int pageNo, int pageSize, String sortBy, String sortDir);
 
-    List<ProductDto> getLatestProducts();
-
-    List<ProductDto> getFeaturedProducts();
-
     ProductDto createProduct(ProductRequest productRequest);
 
-    ProductDto updateProduct(Long id, ProductRequest productRequest);
+    ProductDto updateProduct(Integer id, ProductRequest productRequest);
 
-    ApiResponse<String> deleteProduct(Long id);
+    ApiResponse<String> deleteProduct(Integer id);
 }

@@ -14,8 +14,11 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ProductImageDto {
 
-    private Long id;
+    private Integer imageId;
     private String imageUrl;
-    private boolean isPrimary;
-    private Long productId;
+    private Integer productId;
+
+    public Integer getId() {
+        return imageId;
+    }
 }

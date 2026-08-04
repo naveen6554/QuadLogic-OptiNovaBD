@@ -16,12 +16,8 @@ public class CategoryMapper {
             return null;
         }
         return CategoryDto.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .description(category.getDescription())
-                .imageUrl(category.getImageUrl())
-                .active(category.isActive())
-                .createdAt(category.getCreatedAt())
+                .categoryId(category.getCategoryId())
+                .categoryName(category.getCategoryName())
                 .build();
     }
 
@@ -30,10 +26,7 @@ public class CategoryMapper {
             return null;
         }
         return Category.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .imageUrl(request.getImageUrl())
-                .active(request.isActive())
+                .categoryName(request.getCategoryName())
                 .build();
     }
 
@@ -41,9 +34,6 @@ public class CategoryMapper {
         if (category == null || request == null) {
             return;
         }
-        category.setName(request.getName());
-        category.setDescription(request.getDescription());
-        category.setImageUrl(request.getImageUrl());
-        category.setActive(request.isActive());
+        category.setCategoryName(request.getCategoryName());
     }
 }

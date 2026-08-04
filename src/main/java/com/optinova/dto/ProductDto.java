@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Data Transfer Object representing optical product details in API responses.
+ * Data Transfer Object representing product details in API responses.
  */
 @Data
 @NoArgsConstructor
@@ -18,20 +18,21 @@ import java.util.List;
 @Builder
 public class ProductDto {
 
-    private Long id;
+    private Integer productId;
     private String name;
     private String description;
-    private String brand;
-    private String frameType;
-    private String frameShape;
-    private String gender;
     private BigDecimal price;
-    private BigDecimal discountPrice;
-    private Integer stockQuantity;
-    private boolean isFeatured;
-    private boolean isActive;
+    private Integer stock;
     private CategoryDto category;
-    private String primaryImageUrl;
     private List<String> imageUrls;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    public Integer getId() {
+        return productId;
+    }
+
+    public Integer getStockQuantity() {
+        return stock;
+    }
 }

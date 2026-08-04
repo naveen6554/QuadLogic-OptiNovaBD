@@ -17,15 +17,10 @@ import lombok.NoArgsConstructor;
 public class CategoryRequest {
 
     @NotBlank(message = "Category name is required")
-    @Size(min = 2, max = 100, message = "Category name must be between 2 and 100 characters")
-    private String name;
+    @Size(min = 2, max = 255, message = "Category name must be between 2 and 255 characters")
+    private String categoryName;
 
-    @Size(max = 1000, message = "Description must not exceed 1000 characters")
-    private String description;
-
-    @Size(max = 255, message = "Image URL must not exceed 255 characters")
-    private String imageUrl;
-
-    @Builder.Default
-    private boolean active = true;
+    public String getName() {
+        return categoryName;
+    }
 }

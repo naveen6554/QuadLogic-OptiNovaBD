@@ -17,12 +17,13 @@ import java.time.LocalDateTime;
 @Builder
 public class UserResponse {
 
-    private Long id;
-    private String firstName;
-    private String lastName;
+    private Integer userId;
+    private String username;
     private String email;
-    private String phone;
     private Role role;
-    private boolean isVerified;
     private LocalDateTime createdAt;
+
+    public Integer getId() {
+        return userId;
+    }
 }

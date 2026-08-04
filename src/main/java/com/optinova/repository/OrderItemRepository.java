@@ -10,7 +10,7 @@ import java.util.List;
  * Spring Data JPA Repository interface for OrderItem entity data operations.
  */
 @Repository
-public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
+public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
 
-    List<OrderItem> findByOrderId(Long orderId);
+    List<OrderItem> findByOrderOrderId(String orderId);
 }

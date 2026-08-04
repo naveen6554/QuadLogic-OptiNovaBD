@@ -32,18 +32,18 @@ public class CartController {
     private final CartService cartService;
 
     @GetMapping
-    @Operation(summary = "Get User Cart", description = "Retrieves the active user's shopping cart items, total item count, and grand total.")
+    @Operation(summary = "Get User Cart", description = "Retrieves the active user's shopping cart items.")
     public ResponseEntity<ApiResponse<CartResponse>> getUserCart(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        CartResponse cart = cartService.getUserCart(userDetails.getUser().getId());
+        CartResponse cart = cartService.getUserCart(userDetails.getUser().getUserId());
         return ResponseEntity.ok(ApiResponse.success("Cart retrieved successfully", cart));
     }
 
     @PostMapping("/items")
-    @Operation(summary = "Add Item To Cart", description = "Adds an optical product item to the user's shopping cart.")
+    @Operation(summary = "Add Item To Cart", description = "Adds an item to the user's shopping cart.")
     public ResponseEntity<ApiResponse<CartResponse>> addItemToCart(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody AddToCartRequest request) {
-        CartResponse updatedCart = cartService.addItemToCart(userDetails.getUser().getId(), request);
+        CartResponse updatedCart = cartService.addItemToCart(userDetails.getUser().getUserId(), request);
         return new ResponseEntity<>(ApiResponse.success("Item added to cart successfully", updatedCart), HttpStatus.CREATED);
     }
 
@@ -51,9 +51,9 @@ public class CartController {
     @Operation(summary = "Update Cart Item Quantity", description = "Updates the quantity of a specific item in the user's shopping cart.")
     public ResponseEntity<ApiResponse<CartResponse>> updateCartItemQuantity(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long cartItemId,
+            @PathVariable Integer cartItemId,
             @Valid @RequestBody UpdateCartItemRequest request) {
-        CartResponse updatedCart = cartService.updateCartItemQuantity(userDetails.getUser().getId(), cartItemId, request);
+        CartResponse updatedCart = cartService.updateCartItemQuantity(userDetails.getUser().getUserId(), cartItemId, request);
         return ResponseEntity.ok(ApiResponse.success("Cart item quantity updated successfully", updatedCart));
     }
 
@@ -61,15 +61,15 @@ public class CartController {
     @Operation(summary = "Remove Item From Cart", description = "Removes a specific item from the user's shopping cart.")
     public ResponseEntity<ApiResponse<CartResponse>> removeCartItem(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long cartItemId) {
-        CartResponse updatedCart = cartService.removeCartItem(userDetails.getUser().getId(), cartItemId);
+            @PathVariable Integer cartItemId) {
+        CartResponse updatedCart = cartService.removeCartItem(userDetails.getUser().getUserId(), cartItemId);
         return ResponseEntity.ok(ApiResponse.success("Item removed from cart successfully", updatedCart));
     }
 
     @DeleteMapping
     @Operation(summary = "Clear Cart", description = "Clears all items from the user's shopping cart.")
     public ResponseEntity<ApiResponse<String>> clearUserCart(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        ApiResponse<String> response = cartService.clearUserCart(userDetails.getUser().getId());
+        ApiResponse<String> response = cartService.clearUserCart(userDetails.getUser().getUserId());
         return ResponseEntity.ok(response);
     }
 }

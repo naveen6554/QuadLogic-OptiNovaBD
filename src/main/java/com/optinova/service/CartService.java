@@ -10,13 +10,13 @@ import com.optinova.dto.UpdateCartItemRequest;
  */
 public interface CartService {
 
-    CartResponse getUserCart(Long userId);
+    CartResponse getUserCart(Integer userId);
 
-    CartResponse addItemToCart(Long userId, AddToCartRequest request);
+    CartResponse addItemToCart(Integer userId, AddToCartRequest request);
 
-    CartResponse updateCartItemQuantity(Long userId, Long cartItemId, UpdateCartItemRequest request);
+    CartResponse updateCartItemQuantity(Integer userId, Integer cartItemId, UpdateCartItemRequest request);
 
-    CartResponse removeCartItem(Long userId, Long cartItemId);
+    CartResponse removeCartItem(Integer userId, Integer cartItemId);
 
-    ApiResponse<String> clearUserCart(Long userId);
+    ApiResponse<String> clearUserCart(Integer userId);
 }

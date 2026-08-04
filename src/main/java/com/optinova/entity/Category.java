@@ -2,13 +2,10 @@ package com.optinova.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 /**
- * JPA Entity mapping to the 'categories' table in the 'e-commerce' database.
- * Represents product categories for optical glasses (e.g. Eyeglasses, Sunglasses, Reading Glasses, Computer Glasses).
+ * JPA Entity mapping to the 'categories' table in the database.
+ * Columns: category_id, category_name
  */
 @Entity
 @Table(name = "categories")
@@ -21,22 +18,25 @@ public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "category_id")
+    private Integer categoryId;
 
-    @Column(name = "name", nullable = false, unique = true, length = 100)
-    private String name;
+    @Column(name = "category_name", nullable = false, unique = true, length = 255)
+    private String categoryName;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
+    public Integer getId() {
+        return categoryId;
+    }
 
-    @Column(name = "image_url", length = 255)
-    private String imageUrl;
+    public void setId(Integer id) {
+        this.categoryId = id;
+    }
 
-    @Column(name = "active", nullable = false)
-    @Builder.Default
-    private boolean active = true;
+    public String getName() {
+        return categoryName;
+    }
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    public void setName(String name) {
+        this.categoryName = name;
+    }
 }

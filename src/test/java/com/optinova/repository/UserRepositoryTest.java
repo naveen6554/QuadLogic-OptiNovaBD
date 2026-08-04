@@ -28,21 +28,17 @@ class UserRepositoryTest {
     @DisplayName("Should Save User and Retrieve By Email")
     void testSaveAndFindByEmail() {
         User user = User.builder()
-                .firstName("Opti")
-                .lastName("Tester")
+                .username("optitester")
                 .email("test.user@optinova.com")
                 .password("encoded_secret_password")
-                .phone("1234567890")
-                .role(Role.ROLE_USER)
-                .isVerified(true)
+                .role(Role.CUSTOMER)
                 .build();
 
         User savedUser = userRepository.save(user);
 
-        assertNotNull(savedUser.getId());
+        assertNotNull(savedUser.getUserId());
         Optional<User> retrieved = userRepository.findByEmail("test.user@optinova.com");
         assertTrue(retrieved.isPresent());
-        assertEquals("Opti", retrieved.get().getFirstName());
-        assertTrue(retrieved.get().isVerified());
+        assertEquals("optitester", retrieved.get().getUsername());
     }
 }

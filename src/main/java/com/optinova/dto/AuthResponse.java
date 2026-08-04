@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class AuthResponse {
 
+    private String token;
     private String accessToken;
     private String tokenType;
     private long expiresInMs;

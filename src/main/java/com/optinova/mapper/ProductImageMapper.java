@@ -17,10 +17,9 @@ public class ProductImageMapper {
             return null;
         }
         return ProductImageDto.builder()
-                .id(productImage.getId())
+                .imageId(productImage.getImageId())
                 .imageUrl(productImage.getImageUrl())
-                .isPrimary(productImage.isPrimary())
-                .productId(productImage.getProduct() != null ? productImage.getProduct().getId() : null)
+                .productId(productImage.getProduct() != null ? productImage.getProduct().getProductId() : null)
                 .build();
     }
 
@@ -30,7 +29,6 @@ public class ProductImageMapper {
         }
         return ProductImage.builder()
                 .imageUrl(request.getImageUrl())
-                .isPrimary(request.isPrimary())
                 .product(product)
                 .build();
     }

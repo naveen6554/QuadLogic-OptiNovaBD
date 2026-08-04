@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Service implementation managing optical product image gallery resources.
+ * Service implementation managing product image gallery resources.
  */
 @Service
 @RequiredArgsConstructor
@@ -30,25 +30,20 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductImageDto> getImagesByProductId(Long productId) {
+    public List<ProductImageDto> getImagesByProductId(Integer productId) {
         if (!productRepository.existsById(productId)) {
             throw new ResourceNotFoundException("Product", "id", productId);
         }
-        return productImageRepository.findByProductId(productId).stream()
+        return productImageRepository.findByProductProductId(productId).stream()
                 .map(productImageMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public ProductImageDto addImageToProduct(Long productId, ProductImageRequest request) {
+    public ProductImageDto addImageToProduct(Integer productId, ProductImageRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
-
-        // If the new image is set to primary, reset pre-existing primary images
-        if (request.isPrimary()) {
-            resetPrimaryFlags(productId);
-        }
 
         ProductImage productImage = productImageMapper.toEntity(request, product);
         ProductImage savedImage = productImageRepository.save(productImage);
@@ -57,16 +52,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     @Override
     @Transactional
-    public ProductImageDto updateProductImage(Long imageId, ProductImageRequest request) {
+    public ProductImageDto updateProductImage(Integer imageId, ProductImageRequest request) {
         ProductImage productImage = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("ProductImage", "id", imageId));
 
-        if (request.isPrimary() && !productImage.isPrimary()) {
-            resetPrimaryFlags(productImage.getProduct().getId());
-        }
-
         productImage.setImageUrl(request.getImageUrl());
-        productImage.setPrimary(request.isPrimary());
 
         ProductImage updatedImage = productImageRepository.save(productImage);
         return productImageMapper.toDto(updatedImage);
@@ -74,21 +64,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     @Override
     @Transactional
-    public ApiResponse<String> deleteProductImage(Long imageId) {
+    public ApiResponse<String> deleteProductImage(Integer imageId) {
         ProductImage productImage = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("ProductImage", "id", imageId));
 
         productImageRepository.delete(productImage);
         return ApiResponse.success("Product image with ID " + imageId + " deleted successfully.");
-    }
-
-    private void resetPrimaryFlags(Long productId) {
-        List<ProductImage> existingImages = productImageRepository.findByProductId(productId);
-        existingImages.forEach(img -> {
-            if (img.isPrimary()) {
-                img.setPrimary(false);
-            }
-        });
-        productImageRepository.saveAll(existingImages);
     }
 }

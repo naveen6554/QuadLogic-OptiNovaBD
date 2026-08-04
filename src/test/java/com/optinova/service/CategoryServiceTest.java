@@ -42,16 +42,12 @@ class CategoryServiceTest {
     @BeforeEach
     void setUp() {
         category = Category.builder()
-                .id(1L)
-                .name("Eyeglasses")
-                .description("Optical frames and prescription lenses")
-                .active(true)
+                .categoryId(1)
+                .categoryName("Eyeglasses")
                 .build();
 
         categoryRequest = CategoryRequest.builder()
-                .name("Eyeglasses")
-                .description("Optical frames and prescription lenses")
-                .active(true)
+                .categoryName("Eyeglasses")
                 .build();
     }
 
@@ -70,27 +66,27 @@ class CategoryServiceTest {
     @Test
     @DisplayName("Should Get Category By Id Successfully")
     void testGetCategoryByIdSuccess() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
 
-        CategoryDto dto = categoryService.getCategoryById(1L);
+        CategoryDto dto = categoryService.getCategoryById(1);
 
         assertNotNull(dto);
-        assertEquals(1L, dto.getId());
+        assertEquals(Integer.valueOf(1), dto.getId());
         assertEquals("Eyeglasses", dto.getName());
     }
 
     @Test
     @DisplayName("Should Throw ResourceNotFoundException when Category ID Not Found")
     void testGetCategoryByIdNotFound() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(categoryRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> categoryService.getCategoryById(99L));
+        assertThrows(ResourceNotFoundException.class, () -> categoryService.getCategoryById(99));
     }
 
     @Test
     @DisplayName("Should Create Category Successfully")
     void testCreateCategorySuccess() {
-        when(categoryRepository.existsByName("Eyeglasses")).thenReturn(false);
+        when(categoryRepository.existsByCategoryName("Eyeglasses")).thenReturn(false);
         when(categoryRepository.save(any(Category.class))).thenReturn(category);
 
         CategoryDto created = categoryService.createCategory(categoryRequest);
@@ -103,7 +99,7 @@ class CategoryServiceTest {
     @Test
     @DisplayName("Should Throw DuplicateResourceException when Category Name Exists")
     void testCreateCategoryDuplicateName() {
-        when(categoryRepository.existsByName("Eyeglasses")).thenReturn(true);
+        when(categoryRepository.existsByCategoryName("Eyeglasses")).thenReturn(true);
 
         assertThrows(DuplicateResourceException.class, () -> categoryService.createCategory(categoryRequest));
         verify(categoryRepository, never()).save(any());

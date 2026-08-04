@@ -3,7 +3,6 @@ package com.optinova.mapper;
 import com.optinova.dto.CartItemDto;
 import com.optinova.dto.CartResponse;
 import com.optinova.entity.CartItem;
-import com.optinova.entity.ProductImage;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -23,28 +22,20 @@ public class CartMapper {
         }
 
         String primaryImage = null;
-        if (cartItem.getProduct() != null && cartItem.getProduct().getImages() != null) {
-            primaryImage = cartItem.getProduct().getImages().stream()
-                    .filter(ProductImage::isPrimary)
-                    .map(ProductImage::getImageUrl)
-                    .findFirst()
-                    .orElse(!cartItem.getProduct().getImages().isEmpty()
-                            ? cartItem.getProduct().getImages().get(0).getImageUrl() : null);
+        if (cartItem.getProduct() != null && cartItem.getProduct().getImages() != null && !cartItem.getProduct().getImages().isEmpty()) {
+            primaryImage = cartItem.getProduct().getImages().get(0).getImageUrl();
         }
 
-        BigDecimal effectivePrice = (cartItem.getProduct().getDiscountPrice() != null &&
-                cartItem.getProduct().getDiscountPrice().compareTo(BigDecimal.ZERO) > 0)
-                ? cartItem.getProduct().getDiscountPrice()
-                : cartItem.getProduct().getPrice();
+        BigDecimal price = cartItem.getProduct() != null ? cartItem.getProduct().getPrice() : BigDecimal.ZERO;
+        BigDecimal itemTotal = price.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
 
         return CartItemDto.builder()
                 .id(cartItem.getId())
-                .productId(cartItem.getProduct().getId())
-                .productName(cartItem.getProduct().getName())
-                .productBrand(cartItem.getProduct().getBrand())
-                .price(effectivePrice)
+                .productId(cartItem.getProduct() != null ? cartItem.getProduct().getProductId() : null)
+                .productName(cartItem.getProduct() != null ? cartItem.getProduct().getName() : null)
+                .price(price)
                 .quantity(cartItem.getQuantity())
-                .totalPrice(cartItem.getTotalPrice())
+                .totalPrice(itemTotal)
                 .primaryImageUrl(primaryImage)
                 .build();
     }
@@ -66,8 +57,8 @@ public class CartMapper {
                 .mapToInt(CartItem::getQuantity)
                 .sum();
 
-        BigDecimal grandTotal = cartItems.stream()
-                .map(CartItem::getTotalPrice)
+        BigDecimal grandTotal = itemDtos.stream()
+                .map(CartItemDto::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return CartResponse.builder()

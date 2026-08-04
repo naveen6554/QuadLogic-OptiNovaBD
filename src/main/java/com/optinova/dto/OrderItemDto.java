@@ -16,11 +16,14 @@ import java.math.BigDecimal;
 @Builder
 public class OrderItemDto {
 
-    private Long id;
-    private Long productId;
+    private Integer id;
+    private String orderId;
+    private Integer productId;
     private String productName;
-    private String productBrand;
-    private BigDecimal price;
+    private String description;
+    private String categoryName;
     private Integer quantity;
-    private BigDecimal subtotal;
+    private BigDecimal pricePerUnit;
+    private BigDecimal totalPrice;
+    private String primaryImageUrl;
 }

@@ -11,11 +11,11 @@ import java.util.List;
  */
 public interface ProductImageService {
 
-    List<ProductImageDto> getImagesByProductId(Long productId);
+    List<ProductImageDto> getImagesByProductId(Integer productId);
 
-    ProductImageDto addImageToProduct(Long productId, ProductImageRequest request);
+    ProductImageDto addImageToProduct(Integer productId, ProductImageRequest request);
 
-    ProductImageDto updateProductImage(Long imageId, ProductImageRequest request);
+    ProductImageDto updateProductImage(Integer imageId, ProductImageRequest request);
 
-    ApiResponse<String> deleteProductImage(Long imageId);
+    ApiResponse<String> deleteProductImage(Integer imageId);
 }

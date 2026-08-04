@@ -8,12 +8,12 @@ import com.optinova.entity.Order;
 import com.optinova.entity.Product;
 import com.optinova.entity.User;
 import com.optinova.entity.enums.OrderStatus;
-import com.optinova.entity.enums.PaymentStatus;
 import com.optinova.entity.enums.Role;
 import com.optinova.exception.BadRequestException;
 import com.optinova.mapper.OrderMapper;
 import com.optinova.repository.CartItemRepository;
 import com.optinova.repository.OrderRepository;
+import com.optinova.repository.ProductImageRepository;
 import com.optinova.repository.ProductRepository;
 import com.optinova.repository.UserRepository;
 import com.optinova.service.impl.OrderServiceImpl;
@@ -50,8 +50,12 @@ class OrderServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private ProductImageRepository productImageRepository;
+
     @Spy
-    private OrderMapper orderMapper = new OrderMapper();
+    @InjectMocks
+    private OrderMapper orderMapper;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -65,35 +69,29 @@ class OrderServiceTest {
     @BeforeEach
     void setUp() {
         user = User.builder()
-                .id(1L)
+                .userId(1)
                 .email("john.doe@example.com")
-                .role(Role.ROLE_USER)
+                .role(Role.CUSTOMER)
                 .build();
 
         product = Product.builder()
-                .id(10L)
+                .productId(10)
                 .name("Computer Glasses")
                 .price(new BigDecimal("50.00"))
-                .stockQuantity(10)
-                .isActive(true)
+                .stock(10)
                 .build();
 
         cartItem = CartItem.builder()
-                .id(100L)
+                .id(100)
                 .user(user)
                 .product(product)
                 .quantity(2)
-                .totalPrice(new BigDecimal("100.00"))
                 .build();
 
         order = Order.builder()
-                .id(500L)
-                .orderNumber("ORD-12345678")
+                .orderId("ORD-12345678")
                 .user(user)
-                .shippingAddress("123 Optical St, Vision City")
-                .paymentMethod("CREDIT_CARD")
-                .orderStatus(OrderStatus.PENDING)
-                .paymentStatus(PaymentStatus.PENDING)
+                .status(OrderStatus.PENDING)
                 .totalAmount(new BigDecimal("100.00"))
                 .build();
 
@@ -106,42 +104,88 @@ class OrderServiceTest {
     @Test
     @DisplayName("Should Create Order Successfully from Cart")
     void testCreateOrderSuccess() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(cartItemRepository.findByUserId(1L)).thenReturn(List.of(cartItem));
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(cartItemRepository.findByUserUserId(1)).thenReturn(List.of(cartItem));
         when(orderRepository.save(any(Order.class))).thenReturn(order);
 
-        OrderDto created = orderService.createOrder(1L, createOrderRequest);
+        OrderDto created = orderService.createOrder(1, createOrderRequest);
 
         assertNotNull(created);
-        assertEquals("ORD-12345678", created.getOrderNumber());
-        assertEquals(OrderStatus.PENDING, created.getOrderStatus());
+        assertEquals("ORD-12345678", created.getOrderId());
+        assertEquals(OrderStatus.PENDING, created.getStatus());
         verify(productRepository, times(1)).save(any(Product.class));
-        verify(cartItemRepository, times(1)).deleteByUserId(1L);
+        verify(cartItemRepository, times(1)).deleteByUserUserId(1);
     }
 
     @Test
     @DisplayName("Should Throw BadRequestException when Cart is Empty")
     void testCreateOrderEmptyCart() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(cartItemRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(cartItemRepository.findByUserUserId(1)).thenReturn(Collections.emptyList());
 
-        assertThrows(BadRequestException.class, () -> orderService.createOrder(1L, createOrderRequest));
+        assertThrows(BadRequestException.class, () -> orderService.createOrder(1, createOrderRequest));
     }
 
     @Test
     @DisplayName("Should Update Order Status Successfully")
     void testUpdateOrderStatusSuccess() {
-        when(orderRepository.findById(500L)).thenReturn(Optional.of(order));
+        when(orderRepository.findById("ORD-12345678")).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenReturn(order);
 
         UpdateOrderStatusRequest request = UpdateOrderStatusRequest.builder()
-                .orderStatus(OrderStatus.SHIPPED)
+                .orderStatus(OrderStatus.SUCCESS)
                 .build();
 
-        OrderDto updated = orderService.updateOrderStatus(500L, request);
+        OrderDto updated = orderService.updateOrderStatus("ORD-12345678", request);
 
         assertNotNull(updated);
-        assertEquals(OrderStatus.SHIPPED, order.getOrderStatus());
+        assertEquals(OrderStatus.SUCCESS, order.getStatus());
         verify(orderRepository, times(1)).save(order);
+    }
+
+    @Test
+    @DisplayName("Should Get User Success Orders Successfully")
+    void testGetUserSuccessOrdersSuccess() {
+        Order successOrder = Order.builder()
+                .orderId("ORD-99999999")
+                .user(user)
+                .status(OrderStatus.SUCCESS)
+                .totalAmount(new BigDecimal("100.00"))
+                .orderItems(List.of(
+                        com.optinova.entity.OrderItem.builder()
+                                .id(1)
+                                .product(product)
+                                .quantity(2)
+                                .pricePerUnit(new BigDecimal("50.00"))
+                                .totalPrice(new BigDecimal("100.00"))
+                                .build()
+                ))
+                .build();
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(orderRepository.findUserSuccessOrdersWithDetails(1, OrderStatus.SUCCESS)).thenReturn(List.of(successOrder));
+
+        com.optinova.dto.UserOrdersResponse response = orderService.getUserSuccessOrders(1);
+
+        assertNotNull(response);
+        assertEquals("CUSTOMER", response.getRole());
+        assertNotNull(response.getOrders());
+        assertEquals(1, response.getOrders().getProducts().size());
+        assertEquals("ORD-99999999", response.getOrders().getProducts().get(0).getOrderId());
+        assertEquals("Computer Glasses", response.getOrders().getProducts().get(0).getName());
+    }
+
+    @Test
+    @DisplayName("Should Return Empty Products Array When No Success Orders Exist")
+    void testGetUserSuccessOrdersEmpty() {
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(orderRepository.findUserSuccessOrdersWithDetails(1, OrderStatus.SUCCESS)).thenReturn(Collections.emptyList());
+
+        com.optinova.dto.UserOrdersResponse response = orderService.getUserSuccessOrders(1);
+
+        assertNotNull(response);
+        assertEquals("CUSTOMER", response.getRole());
+        assertNotNull(response.getOrders());
+        assertTrue(response.getOrders().getProducts().isEmpty());
     }
 }

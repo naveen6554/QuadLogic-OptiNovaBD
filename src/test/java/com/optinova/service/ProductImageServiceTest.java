@@ -47,30 +47,28 @@ class ProductImageServiceTest {
     @BeforeEach
     void setUp() {
         product = Product.builder()
-                .id(1L)
+                .productId(1)
                 .name("Wayfarer Black")
                 .build();
 
         productImage = ProductImage.builder()
-                .id(100L)
+                .imageId(100)
                 .imageUrl("https://optinova.com/images/wayfarer_1.jpg")
-                .isPrimary(true)
                 .product(product)
                 .build();
 
         imageRequest = ProductImageRequest.builder()
                 .imageUrl("https://optinova.com/images/wayfarer_1.jpg")
-                .isPrimary(true)
                 .build();
     }
 
     @Test
     @DisplayName("Should Get Images By Product ID Successfully")
     void testGetImagesByProductIdSuccess() {
-        when(productRepository.existsById(1L)).thenReturn(true);
-        when(productImageRepository.findByProductId(1L)).thenReturn(List.of(productImage));
+        when(productRepository.existsById(1)).thenReturn(true);
+        when(productImageRepository.findByProductProductId(1)).thenReturn(List.of(productImage));
 
-        List<ProductImageDto> images = productImageService.getImagesByProductId(1L);
+        List<ProductImageDto> images = productImageService.getImagesByProductId(1);
 
         assertFalse(images.isEmpty());
         assertEquals(1, images.size());
@@ -80,10 +78,10 @@ class ProductImageServiceTest {
     @Test
     @DisplayName("Should Add Image To Product Successfully")
     void testAddImageToProductSuccess() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
         when(productImageRepository.save(any(ProductImage.class))).thenReturn(productImage);
 
-        ProductImageDto dto = productImageService.addImageToProduct(1L, imageRequest);
+        ProductImageDto dto = productImageService.addImageToProduct(1, imageRequest);
 
         assertNotNull(dto);
         assertEquals("https://optinova.com/images/wayfarer_1.jpg", dto.getImageUrl());
@@ -93,8 +91,8 @@ class ProductImageServiceTest {
     @Test
     @DisplayName("Should Throw ResourceNotFoundException when Product Not Found")
     void testAddImageProductNotFound() {
-        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+        when(productRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> productImageService.addImageToProduct(99L, imageRequest));
+        assertThrows(ResourceNotFoundException.class, () -> productImageService.addImageToProduct(99, imageRequest));
     }
 }

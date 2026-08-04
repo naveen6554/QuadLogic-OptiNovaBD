@@ -29,16 +29,16 @@ public class ProductImageController {
 
     @GetMapping("/products/{productId}/images")
     @Operation(summary = "Get Images By Product ID", description = "Retrieves all gallery images associated with a specific product.")
-    public ResponseEntity<ApiResponse<List<ProductImageDto>>> getImagesByProductId(@PathVariable Long productId) {
+    public ResponseEntity<ApiResponse<List<ProductImageDto>>> getImagesByProductId(@PathVariable Integer productId) {
         List<ProductImageDto> images = productImageService.getImagesByProductId(productId);
         return ResponseEntity.ok(ApiResponse.success("Product images retrieved successfully", images));
     }
 
     @PostMapping("/products/{productId}/images")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Add Image To Product (Admin)", description = "Adds a new gallery image to a product. Requires ROLE_ADMIN authority.")
+    @Operation(summary = "Add Image To Product (Admin)", description = "Adds a new gallery image to a product. Requires ADMIN role.")
     public ResponseEntity<ApiResponse<ProductImageDto>> addImageToProduct(
-            @PathVariable Long productId,
+            @PathVariable Integer productId,
             @Valid @RequestBody ProductImageRequest request) {
         ProductImageDto createdImage = productImageService.addImageToProduct(productId, request);
         return new ResponseEntity<>(ApiResponse.success("Product image added successfully", createdImage), HttpStatus.CREATED);
@@ -46,9 +46,9 @@ public class ProductImageController {
 
     @PutMapping("/images/{imageId}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Update Product Image (Admin)", description = "Updates image URL or primary status by image ID. Requires ROLE_ADMIN authority.")
+    @Operation(summary = "Update Product Image (Admin)", description = "Updates image URL by image ID. Requires ADMIN role.")
     public ResponseEntity<ApiResponse<ProductImageDto>> updateProductImage(
-            @PathVariable Long imageId,
+            @PathVariable Integer imageId,
             @Valid @RequestBody ProductImageRequest request) {
         ProductImageDto updatedImage = productImageService.updateProductImage(imageId, request);
         return ResponseEntity.ok(ApiResponse.success("Product image updated successfully", updatedImage));
@@ -56,8 +56,8 @@ public class ProductImageController {
 
     @DeleteMapping("/images/{imageId}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Delete Product Image (Admin)", description = "Deletes an image from the gallery by image ID. Requires ROLE_ADMIN authority.")
-    public ResponseEntity<ApiResponse<String>> deleteProductImage(@PathVariable Long imageId) {
+    @Operation(summary = "Delete Product Image (Admin)", description = "Deletes an image from the gallery by image ID. Requires ADMIN role.")
+    public ResponseEntity<ApiResponse<String>> deleteProductImage(@PathVariable Integer imageId) {
         ApiResponse<String> response = productImageService.deleteProductImage(imageId);
         return ResponseEntity.ok(response);
     }

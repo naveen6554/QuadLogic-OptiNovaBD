@@ -34,23 +34,16 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.success("Fetched categories successfully", categories));
     }
 
-    @GetMapping("/active")
-    @Operation(summary = "Get Active Categories", description = "Retrieves a list of active product categories for store front display.")
-    public ResponseEntity<ApiResponse<List<CategoryDto>>> getActiveCategories() {
-        List<CategoryDto> categories = categoryService.getActiveCategories();
-        return ResponseEntity.ok(ApiResponse.success("Fetched active categories successfully", categories));
-    }
-
     @GetMapping("/{id}")
     @Operation(summary = "Get Category By Id", description = "Retrieves category details by category ID.")
-    public ResponseEntity<ApiResponse<CategoryDto>> getCategoryById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<CategoryDto>> getCategoryById(@PathVariable Integer id) {
         CategoryDto category = categoryService.getCategoryById(id);
         return ResponseEntity.ok(ApiResponse.success("Category retrieved successfully", category));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Create Category (Admin)", description = "Creates a new product category. Requires ROLE_ADMIN authority.")
+    @Operation(summary = "Create Category (Admin)", description = "Creates a new product category. Requires ADMIN role.")
     public ResponseEntity<ApiResponse<CategoryDto>> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
         CategoryDto createdCategory = categoryService.createCategory(categoryRequest);
         return new ResponseEntity<>(ApiResponse.success("Category created successfully", createdCategory), HttpStatus.CREATED);
@@ -58,8 +51,8 @@ public class CategoryController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Update Category (Admin)", description = "Updates an existing product category by ID. Requires ROLE_ADMIN authority.")
-    public ResponseEntity<ApiResponse<CategoryDto>> updateCategory(@PathVariable Long id,
+    @Operation(summary = "Update Category (Admin)", description = "Updates an existing product category by ID. Requires ADMIN role.")
+    public ResponseEntity<ApiResponse<CategoryDto>> updateCategory(@PathVariable Integer id,
                                                                     @Valid @RequestBody CategoryRequest categoryRequest) {
         CategoryDto updatedCategory = categoryService.updateCategory(id, categoryRequest);
         return ResponseEntity.ok(ApiResponse.success("Category updated successfully", updatedCategory));
@@ -67,8 +60,8 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Delete Category (Admin)", description = "Deletes a category by ID. Requires ROLE_ADMIN authority.")
-    public ResponseEntity<ApiResponse<String>> deleteCategory(@PathVariable Long id) {
+    @Operation(summary = "Delete Category (Admin)", description = "Deletes a category by ID. Requires ADMIN role.")
+    public ResponseEntity<ApiResponse<String>> deleteCategory(@PathVariable Integer id) {
         ApiResponse<String> response = categoryService.deleteCategory(id);
         return ResponseEntity.ok(response);
     }

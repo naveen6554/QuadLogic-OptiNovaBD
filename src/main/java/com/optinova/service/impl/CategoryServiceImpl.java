@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Service implementation managing optical glasses product category business logic.
+ * Service implementation managing product category business logic.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,15 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryDto> getActiveCategories() {
-        return categoryRepository.findByActiveTrue().stream()
-                .map(categoryMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public CategoryDto getCategoryById(Long id) {
+    public CategoryDto getCategoryById(Integer id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
         return categoryMapper.toDto(category);
@@ -53,8 +45,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDto createCategory(CategoryRequest categoryRequest) {
-        if (categoryRepository.existsByName(categoryRequest.getName())) {
-            throw new DuplicateResourceException("Category already exists with name: " + categoryRequest.getName());
+        if (categoryRepository.existsByCategoryName(categoryRequest.getCategoryName())) {
+            throw new DuplicateResourceException("Category already exists with name: " + categoryRequest.getCategoryName());
         }
 
         Category category = categoryMapper.toEntity(categoryRequest);
@@ -64,14 +56,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryDto updateCategory(Long id, CategoryRequest categoryRequest) {
+    public CategoryDto updateCategory(Integer id, CategoryRequest categoryRequest) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
 
-        // If category name is updated, check for duplicate name conflicts
-        if (!category.getName().equalsIgnoreCase(categoryRequest.getName()) &&
-                categoryRepository.existsByName(categoryRequest.getName())) {
-            throw new DuplicateResourceException("Category name already exists: " + categoryRequest.getName());
+        if (!category.getCategoryName().equalsIgnoreCase(categoryRequest.getCategoryName()) &&
+                categoryRepository.existsByCategoryName(categoryRequest.getCategoryName())) {
+            throw new DuplicateResourceException("Category name already exists: " + categoryRequest.getCategoryName());
         }
 
         categoryMapper.updateEntityFromRequest(category, categoryRequest);
@@ -81,7 +72,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public ApiResponse<String> deleteCategory(Long id) {
+    public ApiResponse<String> deleteCategory(Integer id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
 

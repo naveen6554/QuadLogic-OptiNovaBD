@@ -2,14 +2,10 @@ package com.optinova.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 /**
- * JPA Entity mapping to the 'cart_items' table in the 'e-commerce' database.
- * Represents items present in a user's active shopping cart.
+ * JPA Entity mapping to the 'cart_items' table in the database.
+ * Columns: id, user_id, product_id, quantity
  */
 @Entity
 @Table(name = "cart_items")
@@ -22,7 +18,8 @@ public class CartItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id")
+    private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -34,11 +31,4 @@ public class CartItem {
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
-
-    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalPrice;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 }

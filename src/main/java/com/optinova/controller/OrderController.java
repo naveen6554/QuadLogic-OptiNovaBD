@@ -28,6 +28,27 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final com.optinova.service.RazorpayService razorpayService;
+
+    @PostMapping("/razorpay/create")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Initiate Razorpay Checkout", description = "Creates DB order and generates Razorpay Order ID for payment gateway.")
+    public ResponseEntity<ApiResponse<RazorpayOrderResponse>> createRazorpayOrder(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody CreateOrderRequest request) {
+        RazorpayOrderResponse response = razorpayService.initiateRazorpayCheckout(userDetails.getUser().getUserId(), request);
+        return new ResponseEntity<>(ApiResponse.success("Razorpay order created successfully", response), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/razorpay/verify")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Verify Razorpay Payment Signature", description = "Verifies Razorpay HMAC signature and marks order as paid.")
+    public ResponseEntity<ApiResponse<OrderDto>> verifyRazorpayPayment(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody PaymentVerificationRequest request) {
+        OrderDto order = razorpayService.verifyAndCompletePayment(userDetails.getUser().getUserId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Payment verified and order completed successfully", order));
+    }
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
@@ -35,7 +56,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<OrderDto>> createOrder(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CreateOrderRequest request) {
-        OrderDto order = orderService.createOrder(userDetails.getUser().getId(), request);
+        OrderDto order = orderService.createOrder(userDetails.getUser().getUserId(), request);
         return new ResponseEntity<>(ApiResponse.success("Order placed successfully", order), HttpStatus.CREATED);
     }
 
@@ -43,7 +64,7 @@ public class OrderController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get User Orders", description = "Retrieves order history for the authenticated user.")
     public ResponseEntity<ApiResponse<List<OrderDto>>> getUserOrders(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<OrderDto> orders = orderService.getUserOrders(userDetails.getUser().getId());
+        List<OrderDto> orders = orderService.getUserOrders(userDetails.getUser().getUserId());
         return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully", orders));
     }
 
@@ -52,14 +73,14 @@ public class OrderController {
     @Operation(summary = "Get Order By Id", description = "Retrieves specific order details by order ID.")
     public ResponseEntity<ApiResponse<OrderDto>> getOrderById(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long orderId) {
-        OrderDto order = orderService.getOrderById(userDetails.getUser().getId(), orderId);
+            @PathVariable String orderId) {
+        OrderDto order = orderService.getOrderById(userDetails.getUser().getUserId(), orderId);
         return ResponseEntity.ok(ApiResponse.success("Order details retrieved successfully", order));
     }
 
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get All Orders (Admin)", description = "Retrieves paginated list of all customer orders. Requires ROLE_ADMIN authority.")
+    @Operation(summary = "Get All Orders (Admin)", description = "Retrieves paginated list of all customer orders. Requires ADMIN role.")
     public ResponseEntity<ApiResponse<PageResponse<OrderDto>>> getAllOrders(
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
@@ -71,21 +92,11 @@ public class OrderController {
 
     @PutMapping("/{orderId}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Update Order Status (Admin)", description = "Updates order fulfillment status (PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED). Requires ROLE_ADMIN authority.")
+    @Operation(summary = "Update Order Status (Admin)", description = "Updates order fulfillment status (PENDING, SUCCESS, FAILED). Requires ADMIN role.")
     public ResponseEntity<ApiResponse<OrderDto>> updateOrderStatus(
-            @PathVariable Long orderId,
+            @PathVariable String orderId,
             @Valid @RequestBody UpdateOrderStatusRequest request) {
         OrderDto order = orderService.updateOrderStatus(orderId, request);
         return ResponseEntity.ok(ApiResponse.success("Order status updated successfully", order));
-    }
-
-    @PutMapping("/{orderId}/payment-status")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Update Payment Status (Admin)", description = "Updates payment status (PENDING, COMPLETED, FAILED, REFUNDED). Requires ROLE_ADMIN authority.")
-    public ResponseEntity<ApiResponse<OrderDto>> updatePaymentStatus(
-            @PathVariable Long orderId,
-            @Valid @RequestBody UpdatePaymentStatusRequest request) {
-        OrderDto order = orderService.updatePaymentStatus(orderId, request);
-        return ResponseEntity.ok(ApiResponse.success("Payment status updated successfully", order));
     }
 }

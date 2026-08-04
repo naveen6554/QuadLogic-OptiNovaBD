@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 /**
  * Security Filter intercepting every incoming HTTP request to extract and validate Bearer JWT token.
@@ -38,10 +39,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = getJwtFromRequest(request);
 
         if (StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
-            // Verify token is not revoked or marked expired in Database (Logout check)
             boolean isTokenValidInDb = jwtTokenRepository.findByToken(token)
-                    .map(t -> !t.isRevoked() && !t.isExpired())
-                    .orElse(true);
+                    .map(t -> t.getExpiresAt() != null && t.getExpiresAt().isAfter(LocalDateTime.now()))
+                    .orElse(false);
 
             if (isTokenValidInDb) {
                 String email = tokenProvider.getEmailFromToken(token);

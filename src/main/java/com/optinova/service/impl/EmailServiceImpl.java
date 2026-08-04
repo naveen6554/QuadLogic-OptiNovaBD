@@ -34,10 +34,14 @@ public class EmailServiceImpl implements EmailService {
                     "Best regards,\nOptiNova Security Team");
 
             mailSender.send(message);
-            log.info("Successfully sent OTP email to {}", toEmail);
+            log.info("=========================================================");
+            log.info("Successfully sent OTP email to {}. OTP CODE: [{}]", toEmail, otpCode);
+            log.info("=========================================================");
         } catch (Exception ex) {
+            log.error("=========================================================");
             log.error("Failed to send OTP email to {}: {}", toEmail, ex.getMessage());
-            // Log fallback without failing registration transaction in sandbox environment
+            log.error("DEVELOPMENT FALLBACK OTP CODE FOR {}: [{}]", toEmail, otpCode);
+            log.error("=========================================================");
         }
     }
 

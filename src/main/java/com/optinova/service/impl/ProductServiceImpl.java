@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Service implementation managing optical product search, category filtering, pricing, and catalogue pagination.
+ * Service implementation managing product search, category filtering, pricing, and catalogue pagination.
  */
 @Service
 @RequiredArgsConstructor
@@ -38,13 +38,13 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public PageResponse<ProductDto> getAllProducts(int pageNo, int pageSize, String sortBy, String sortDir) {
         Pageable pageable = createPageable(pageNo, pageSize, sortBy, sortDir);
-        Page<Product> productPage = productRepository.findByIsActiveTrue(pageable);
+        Page<Product> productPage = productRepository.findAll(pageable);
         return buildPageResponse(productPage);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ProductDto getProductById(Long id) {
+    public ProductDto getProductById(Integer id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
         return productMapper.toDto(product);
@@ -60,12 +60,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ProductDto> getProductsByCategory(Long categoryId, int pageNo, int pageSize, String sortBy, String sortDir) {
+    public PageResponse<ProductDto> getProductsByCategory(Integer categoryId, int pageNo, int pageSize, String sortBy, String sortDir) {
         if (!categoryRepository.existsById(categoryId)) {
             throw new ResourceNotFoundException("Category", "id", categoryId);
         }
         Pageable pageable = createPageable(pageNo, pageSize, sortBy, sortDir);
-        Page<Product> productPage = productRepository.findByCategoryIdAndIsActiveTrue(categoryId, pageable);
+        Page<Product> productPage = productRepository.findByCategoryCategoryId(categoryId, pageable);
         return buildPageResponse(productPage);
     }
 
@@ -78,26 +78,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<ProductDto> getLatestProducts() {
-        return productRepository.findTop10ByIsActiveTrueOrderByCreatedAtDesc().stream()
-                .map(productMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProductDto> getFeaturedProducts() {
-        return productRepository.findByIsFeaturedTrueAndIsActiveTrue().stream()
-                .map(productMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     @Transactional
     public ProductDto createProduct(ProductRequest productRequest) {
-        Category category = categoryRepository.findById(productRequest.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", productRequest.getCategoryId()));
+        Category category = null;
+        if (productRequest.getCategoryId() != null) {
+            category = categoryRepository.findById(productRequest.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category", "id", productRequest.getCategoryId()));
+        }
 
         Product product = productMapper.toEntity(productRequest, category);
         Product savedProduct = productRepository.save(product);
@@ -106,12 +93,15 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductDto updateProduct(Long id, ProductRequest productRequest) {
+    public ProductDto updateProduct(Integer id, ProductRequest productRequest) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
 
-        Category category = categoryRepository.findById(productRequest.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", productRequest.getCategoryId()));
+        Category category = null;
+        if (productRequest.getCategoryId() != null) {
+            category = categoryRepository.findById(productRequest.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category", "id", productRequest.getCategoryId()));
+        }
 
         productMapper.updateEntityFromRequest(product, productRequest, category);
         Product updatedProduct = productRepository.save(product);
@@ -120,7 +110,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ApiResponse<String> deleteProduct(Long id) {
+    public ApiResponse<String> deleteProduct(Integer id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
 

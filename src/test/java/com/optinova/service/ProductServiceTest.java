@@ -56,49 +56,33 @@ class ProductServiceTest {
     @BeforeEach
     void setUp() {
         category = Category.builder()
-                .id(1L)
-                .name("Sunglasses")
-                .description("UV protection stylish sunglasses")
-                .active(true)
+                .categoryId(1)
+                .categoryName("Sunglasses")
                 .build();
 
         product = Product.builder()
-                .id(10L)
+                .productId(10)
                 .name("Aviator Classic Gold")
-                .brand("Ray-Ban")
-                .frameType("Full Rim")
-                .frameShape("Aviator")
-                .gender("Unisex")
                 .price(new BigDecimal("150.00"))
-                .discountPrice(new BigDecimal("129.99"))
-                .stockQuantity(25)
-                .isFeatured(true)
-                .isActive(true)
+                .stock(25)
                 .category(category)
                 .build();
 
         productRequest = ProductRequest.builder()
                 .name("Aviator Classic Gold")
-                .brand("Ray-Ban")
-                .frameType("Full Rim")
-                .frameShape("Aviator")
-                .gender("Unisex")
                 .price(new BigDecimal("150.00"))
-                .discountPrice(new BigDecimal("129.99"))
-                .stockQuantity(25)
-                .categoryId(1L)
-                .isFeatured(true)
-                .isActive(true)
+                .stock(25)
+                .categoryId(1)
                 .build();
     }
 
     @Test
-    @DisplayName("Should Retrieve Paginated List of All Active Products")
+    @DisplayName("Should Retrieve Paginated List of All Products")
     void testGetAllProducts() {
         Page<Product> page = new PageImpl<>(List.of(product));
-        when(productRepository.findByIsActiveTrue(any(Pageable.class))).thenReturn(page);
+        when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
 
-        PageResponse<ProductDto> response = productService.getAllProducts(0, 10, "id", "asc");
+        PageResponse<ProductDto> response = productService.getAllProducts(0, 10, "productId", "asc");
 
         assertNotNull(response);
         assertEquals(1, response.getContent().size());
@@ -108,13 +92,13 @@ class ProductServiceTest {
     @Test
     @DisplayName("Should Get Product By ID Successfully")
     void testGetProductByIdSuccess() {
-        when(productRepository.findById(10L)).thenReturn(Optional.of(product));
+        when(productRepository.findById(10)).thenReturn(Optional.of(product));
 
-        ProductDto dto = productService.getProductById(10L);
+        ProductDto dto = productService.getProductById(10);
 
         assertNotNull(dto);
-        assertEquals(10L, dto.getId());
-        assertEquals("Ray-Ban", dto.getBrand());
+        assertEquals(Integer.valueOf(10), dto.getId());
+        assertEquals("Aviator Classic Gold", dto.getName());
     }
 
     @Test
@@ -123,7 +107,7 @@ class ProductServiceTest {
         Page<Product> page = new PageImpl<>(List.of(product));
         when(productRepository.searchProducts(eq("Aviator"), any(Pageable.class))).thenReturn(page);
 
-        PageResponse<ProductDto> response = productService.searchProducts("Aviator", 0, 10, "id", "asc");
+        PageResponse<ProductDto> response = productService.searchProducts("Aviator", 0, 10, "productId", "asc");
 
         assertNotNull(response);
         assertEquals(1, response.getContent().size());
@@ -133,7 +117,7 @@ class ProductServiceTest {
     @Test
     @DisplayName("Should Create Product Successfully")
     void testCreateProductSuccess() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
         when(productRepository.save(any(Product.class))).thenReturn(product);
 
         ProductDto created = productService.createProduct(productRequest);
@@ -146,8 +130,8 @@ class ProductServiceTest {
     @Test
     @DisplayName("Should Throw ResourceNotFoundException when Category ID Invalid during Product Creation")
     void testCreateProductCategoryNotFound() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
-        productRequest.setCategoryId(99L);
+        when(categoryRepository.findById(99)).thenReturn(Optional.empty());
+        productRequest.setCategoryId(99);
 
         assertThrows(ResourceNotFoundException.class, () -> productService.createProduct(productRequest));
     }

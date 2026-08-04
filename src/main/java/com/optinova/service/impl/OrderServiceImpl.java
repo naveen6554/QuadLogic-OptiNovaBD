@@ -7,7 +7,6 @@ import com.optinova.entity.OrderItem;
 import com.optinova.entity.Product;
 import com.optinova.entity.User;
 import com.optinova.entity.enums.OrderStatus;
-import com.optinova.entity.enums.PaymentStatus;
 import com.optinova.entity.enums.Role;
 import com.optinova.exception.BadRequestException;
 import com.optinova.exception.ResourceNotFoundException;
@@ -28,12 +27,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
  * Service implementation managing order creation from active cart sessions, inventory adjustments, and status tracking.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -42,15 +43,16 @@ public class OrderServiceImpl implements OrderService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final com.optinova.repository.ProductImageRepository productImageRepository;
     private final OrderMapper orderMapper;
 
     @Override
     @Transactional
-    public OrderDto createOrder(Long userId, CreateOrderRequest request) {
+    public OrderDto createOrder(Integer userId, CreateOrderRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
+        List<CartItem> cartItems = cartItemRepository.findByUserUserId(userId);
         if (cartItems.isEmpty()) {
             throw new BadRequestException("Cannot place order. Your shopping cart is empty.");
         }
@@ -58,15 +60,12 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
-        String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String generatedOrderId = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         Order order = Order.builder()
-                .orderNumber(orderNumber)
+                .orderId(generatedOrderId)
                 .user(user)
-                .shippingAddress(request.getShippingAddress())
-                .paymentMethod(request.getPaymentMethod())
-                .orderStatus(OrderStatus.PENDING)
-                .paymentStatus(PaymentStatus.PENDING)
+                .status(OrderStatus.SUCCESS)
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
@@ -77,15 +76,10 @@ public class OrderServiceImpl implements OrderService {
                 throw new BadRequestException("Insufficient stock for product: " + product.getName());
             }
 
-            // Deduct product inventory stock
             product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
             productRepository.save(product);
 
-            BigDecimal itemPrice = (product.getDiscountPrice() != null &&
-                    product.getDiscountPrice().compareTo(BigDecimal.ZERO) > 0)
-                    ? product.getDiscountPrice()
-                    : product.getPrice();
-
+            BigDecimal itemPrice = product.getPrice();
             BigDecimal subtotal = itemPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             totalAmount = totalAmount.add(subtotal);
 
@@ -93,8 +87,8 @@ public class OrderServiceImpl implements OrderService {
                     .order(order)
                     .product(product)
                     .quantity(cartItem.getQuantity())
-                    .price(itemPrice)
-                    .subtotal(subtotal)
+                    .pricePerUnit(itemPrice)
+                    .totalPrice(subtotal)
                     .build();
 
             orderItems.add(orderItem);
@@ -105,32 +99,30 @@ public class OrderServiceImpl implements OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Clear active cart session
-        cartItemRepository.deleteByUserId(userId);
+        cartItemRepository.deleteByUserUserId(userId);
 
         return orderMapper.toOrderDto(savedOrder);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<OrderDto> getUserOrders(Long userId) {
+    public List<OrderDto> getUserOrders(Integer userId) {
         verifyUserExists(userId);
-        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        return orderRepository.findByUserUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(orderMapper::toOrderDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public OrderDto getOrderById(Long userId, Long orderId) {
+    public OrderDto getOrderById(Integer userId, String orderId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-        // Enforce data privacy: User can only view their own orders unless they possess ROLE_ADMIN
-        if (!order.getUser().getId().equals(userId) && !user.getRole().equals(Role.ROLE_ADMIN)) {
+        if (!order.getUser().getUserId().equals(userId) && !user.getRole().equals(Role.ADMIN)) {
             throw new BadRequestException("Unauthorized access to order details.");
         }
 
@@ -162,27 +154,80 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderDto updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
+    public OrderDto updateOrderStatus(String orderId, UpdateOrderStatusRequest request) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-        order.setOrderStatus(request.getOrderStatus());
+        order.setStatus(request.getOrderStatus());
         Order updatedOrder = orderRepository.save(order);
         return orderMapper.toOrderDto(updatedOrder);
     }
 
     @Override
-    @Transactional
-    public OrderDto updatePaymentStatus(Long orderId, UpdatePaymentStatusRequest request) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+    @Transactional(readOnly = true)
+    public UserOrdersResponse getUserSuccessOrders(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        order.setPaymentStatus(request.getPaymentStatus());
-        Order updatedOrder = orderRepository.save(order);
-        return orderMapper.toOrderDto(updatedOrder);
+        List<Order> successOrders = orderRepository.findUserSuccessOrdersWithDetails(userId, OrderStatus.SUCCESS);
+
+        List<SuccessOrderProductDto> productDtos = new ArrayList<>();
+        if (successOrders != null) {
+            for (Order order : successOrders) {
+                if (order.getOrderItems() != null) {
+                    for (OrderItem item : order.getOrderItems()) {
+                        Product product = item.getProduct();
+                        String imageUrl = "";
+                        if (product != null) {
+                            if (product.getImages() != null && !product.getImages().isEmpty() && product.getImages().get(0).getImageUrl() != null) {
+                                imageUrl = product.getImages().get(0).getImageUrl();
+                            }
+                            if ((imageUrl == null || imageUrl.isBlank()) && product.getProductId() != null) {
+                                List<com.optinova.entity.ProductImage> pImages = productImageRepository.findByProductProductId(product.getProductId());
+                                if (pImages != null && !pImages.isEmpty() && pImages.get(0).getImageUrl() != null) {
+                                    imageUrl = pImages.get(0).getImageUrl();
+                                }
+                            }
+                        }
+
+                        SuccessOrderProductDto productDto = SuccessOrderProductDto.builder()
+                                .orderId(order.getOrderId())
+                                .productId(product != null ? product.getProductId() : null)
+                                .name(product != null ? product.getName() : null)
+                                .description(product != null ? product.getDescription() : null)
+                                .category(product != null && product.getCategory() != null ? product.getCategory().getName() : null)
+                                .quantity(item.getQuantity())
+                                .pricePerUnit(item.getPricePerUnit())
+                                .totalPrice(item.getTotalPrice())
+                                .imageUrl(imageUrl)
+                                .status(order.getStatus() != null ? order.getStatus().name() : OrderStatus.SUCCESS.name())
+                                .orderDate(order.getCreatedAt() != null ? order.getCreatedAt().toString() : "")
+                                .build();
+
+                        log.info("Order Module -> OrderID: {}, ProductID: {}, Name: {}, DB Image URL: '{}'",
+                                order.getOrderId(),
+                                product != null ? product.getProductId() : null,
+                                product != null ? product.getName() : null,
+                                imageUrl);
+
+                        productDtos.add(productDto);
+                    }
+                }
+            }
+        }
+
+        String displayUsername = (user.getUsername() != null && !user.getUsername().isBlank()) ? user.getUsername() : user.getEmail();
+
+        return UserOrdersResponse.builder()
+                .role(user.getRole() != null ? user.getRole().name() : "CUSTOMER")
+                .username(displayUsername)
+                .orders(UserOrdersResponse.OrderProductsWrapper.builder()
+                        .products(productDtos)
+                        .build())
+                .build();
     }
 
-    private void verifyUserExists(Long userId) {
+    private void verifyUserExists(Integer userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", "id", userId);
         }

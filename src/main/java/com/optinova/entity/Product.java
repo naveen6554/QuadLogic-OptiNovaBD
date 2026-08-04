@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * JPA Entity mapping to the 'products' table in the 'e-commerce' database.
- * Represents optical frames, lenses, pricing, stock inventory, and optical metadata.
+ * JPA Entity mapping to the 'products' table in the database.
+ * Columns: product_id, name, description, price, stock, category_id, created_at, updated_at
  */
 @Entity
 @Table(name = "products")
@@ -25,45 +25,23 @@ public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "product_id")
+    private Integer productId;
 
-    @Column(name = "name", nullable = false, length = 150)
+    @Column(name = "name", nullable = false, length = 255)
     private String name;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "brand", length = 100)
-    private String brand;
-
-    @Column(name = "frame_type", length = 50)
-    private String frameType; // e.g., Full Rim, Half Rim, Rimless
-
-    @Column(name = "frame_shape", length = 50)
-    private String frameShape; // e.g., Aviator, Rectangle, Round, Wayfarer, Cat Eye
-
-    @Column(name = "gender", length = 20)
-    private String gender; // Men, Women, Unisex, Kids
-
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "discount_price", precision = 10, scale = 2)
-    private BigDecimal discountPrice;
-
-    @Column(name = "stock_quantity", nullable = false)
-    private Integer stockQuantity;
-
-    @Column(name = "is_featured", nullable = false)
-    @Builder.Default
-    private boolean isFeatured = false;
-
-    @Column(name = "is_active", nullable = false)
-    @Builder.Default
-    private boolean isActive = true;
+    @Column(name = "stock", nullable = false)
+    private Integer stock;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -77,4 +55,20 @@ public class Product {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public Integer getId() {
+        return productId;
+    }
+
+    public void setId(Integer id) {
+        this.productId = id;
+    }
+
+    public Integer getStockQuantity() {
+        return stock;
+    }
+
+    public void setStockQuantity(Integer stockQuantity) {
+        this.stock = stockQuantity;
+    }
 }

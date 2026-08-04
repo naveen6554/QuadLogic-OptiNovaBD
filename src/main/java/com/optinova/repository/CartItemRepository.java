@@ -11,11 +11,11 @@ import java.util.Optional;
  * Spring Data JPA Repository interface for CartItem entity.
  */
 @Repository
-public interface CartItemRepository extends JpaRepository<CartItem, Long> {
+public interface CartItemRepository extends JpaRepository<CartItem, Integer> {
 
-    List<CartItem> findByUserId(Long userId);
+    List<CartItem> findByUserUserId(Integer userId);
 
-    Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId);
+    Optional<CartItem> findByUserUserIdAndProductProductId(Integer userId, Integer productId);
 
-    void deleteByUserId(Long userId);
+    void deleteByUserUserId(Integer userId);
 }

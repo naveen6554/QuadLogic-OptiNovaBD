@@ -16,10 +16,9 @@ import java.math.BigDecimal;
 @Builder
 public class CartItemDto {
 
-    private Long id;
-    private Long productId;
+    private Integer id;
+    private Integer productId;
     private String productName;
-    private String productBrand;
     private BigDecimal price;
     private Integer quantity;
     private BigDecimal totalPrice;
