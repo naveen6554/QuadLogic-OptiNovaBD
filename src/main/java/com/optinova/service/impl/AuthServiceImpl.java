@@ -43,28 +43,22 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public ApiResponse<String> register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("Account already exists with email: " + request.getEmail());
-        }
-
         String username = request.getUsername();
         if (username == null || username.isBlank()) {
-            username = request.getEmail();
+            username = request.getEmail().contains("@") ? request.getEmail().split("@")[0] : request.getEmail();
         }
 
-        if (userRepository.existsByUsername(username)) {
-            throw new DuplicateResourceException("Account already exists with username: " + username);
-        }
-
+        final String finalUsername = username;
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
 
-        User user = User.builder()
-                .username(username)
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(userRole)
-                .build();
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseGet(() -> User.builder()
+                        .username(finalUsername)
+                        .email(request.getEmail())
+                        .role(userRole)
+                        .build());
 
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
 
         // Generate 6-digit OTP and send email via EmailService
@@ -72,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("Sending OTP [{}] to email: {}", otpCode, user.getEmail());
         emailService.sendOtpEmail(user.getEmail(), otpCode, "REGISTRATION");
 
-        return ApiResponse.success("User registered successfully. Verification OTP code sent to " + user.getEmail());
+        return ApiResponse.success("Verification OTP code sent to " + user.getEmail());
     }
 
     @Override
