@@ -52,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
 
         User user = userRepository.findByEmail(request.getEmail())
+                .or(() -> userRepository.findByUsername(finalUsername))
                 .orElseGet(() -> User.builder()
                         .username(finalUsername)
                         .email(request.getEmail())
