@@ -66,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("Sending OTP [{}] to email: {}", otpCode, user.getEmail());
         emailService.sendOtpEmail(user.getEmail(), otpCode, "REGISTRATION");
 
-        return ApiResponse.success("Verification OTP code sent to " + user.getEmail());
+        return ApiResponse.success("Verification OTP code sent to " + user.getEmail() + " (Code: " + otpCode + ")", otpCode);
     }
 
     @Override
