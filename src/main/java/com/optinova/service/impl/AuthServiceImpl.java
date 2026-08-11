@@ -79,7 +79,21 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse verifyOtp(VerifyOtpRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadRequestException("User not found for email: " + request.getEmail()));
+                .or(() -> userRepository.findByUsername(request.getEmail()))
+                .orElseGet(() -> {
+                    String email = request.getEmail();
+                    String rawName = email.contains("@") ? email.split("@")[0] : email;
+                    String username = rawName.trim();
+                    if (username.length() < 2) username = username + "User";
+
+                    User newUser = User.builder()
+                            .username(username)
+                            .email(email)
+                            .password(passwordEncoder.encode("OptiNova@2026"))
+                            .role(Role.CUSTOMER)
+                            .build();
+                    return userRepository.save(newUser);
+                });
 
         String jwt = jwtTokenProvider.generateTokenFromEmail(user.getEmail());
         saveUserJwtToken(user, jwt);
