@@ -43,21 +43,30 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public ApiResponse<String> register(RegisterRequest request) {
-        String username = request.getUsername();
-        if (username == null || username.isBlank()) {
-            username = request.getEmail().contains("@") ? request.getEmail().split("@")[0] : request.getEmail();
+        String baseUsername = request.getUsername();
+        if (baseUsername == null || baseUsername.isBlank()) {
+            baseUsername = request.getEmail().contains("@") ? request.getEmail().split("@")[0] : request.getEmail();
         }
+        baseUsername = baseUsername.trim();
 
-        final String finalUsername = username;
+        String targetEmail = request.getEmail().trim();
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .or(() -> userRepository.findByUsername(finalUsername))
-                .orElseGet(() -> User.builder()
-                        .username(finalUsername)
-                        .email(request.getEmail())
-                        .role(userRole)
-                        .build());
+        User user = userRepository.findByEmail(targetEmail)
+                .or(() -> userRepository.findByUsername(baseUsername))
+                .orElse(null);
+
+        if (user == null) {
+            String finalUsername = baseUsername;
+            if (userRepository.existsByUsername(finalUsername)) {
+                finalUsername = baseUsername + "_" + (System.currentTimeMillis() % 10000);
+            }
+            user = User.builder()
+                    .username(finalUsername)
+                    .email(targetEmail)
+                    .role(userRole)
+                    .build();
+        }
 
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
