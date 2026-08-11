@@ -155,11 +155,10 @@ public class AuthServiceImpl implements AuthService {
 
     private AuthResponse buildAuthResponse(User user, String jwtToken) {
         UserResponse userResponse = UserResponse.builder()
-                .id(user.getUserId())
                 .userId(user.getUserId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .role(user.getRole().name())
+                .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .build();
 
