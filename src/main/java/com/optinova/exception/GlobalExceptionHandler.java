@@ -62,8 +62,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateResourceException(
+    public ResponseEntity<?> handleDuplicateResourceException(
             DuplicateResourceException ex, HttpServletRequest request) {
+        if (request.getRequestURI() != null && request.getRequestURI().contains("/api/v1/auth/register")) {
+            return ResponseEntity.ok(com.optinova.dto.ApiResponse.success("Verification OTP code sent to your email."));
+        }
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.CONFLICT.value())
                 .error(HttpStatus.CONFLICT.getReasonPhrase())
@@ -75,8 +78,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
+    public ResponseEntity<?> handleDataIntegrityViolationException(
             org.springframework.dao.DataIntegrityViolationException ex, HttpServletRequest request) {
+        if (request.getRequestURI() != null && request.getRequestURI().contains("/api/v1/auth/register")) {
+            return ResponseEntity.ok(com.optinova.dto.ApiResponse.success("Verification OTP code sent to your email."));
+        }
         String msg = "An account with this email address or username already exists. Please log in or use Forgot Password.";
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.CONFLICT.value())
