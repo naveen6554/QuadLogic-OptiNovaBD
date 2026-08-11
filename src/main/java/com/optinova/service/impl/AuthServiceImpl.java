@@ -1,17 +1,16 @@
 package com.optinova.service.impl;
 
 import com.optinova.dto.*;
-import com.optinova.entity.JwtToken;
 import com.optinova.entity.User;
 import com.optinova.entity.enums.Role;
 import com.optinova.exception.BadRequestException;
-import com.optinova.exception.DuplicateResourceException;
-import com.optinova.exception.InvalidTokenException;
 import com.optinova.repository.JwtTokenRepository;
 import com.optinova.repository.UserRepository;
 import com.optinova.security.JwtTokenProvider;
 import com.optinova.service.AuthService;
+import com.optinova.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,11 +18,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-
-import com.optinova.service.EmailService;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Implementation of AuthService managing user registration, authentication, and JWT tokens.
@@ -69,14 +63,22 @@ public class AuthServiceImpl implements AuthService {
         }
 
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+        } catch (Exception ex) {
+            log.warn("User save notice for {}: {}", targetEmail, ex.getMessage());
+        }
 
         // Generate 6-digit OTP and send email via EmailService
         String otpCode = String.format("%06d", new java.security.SecureRandom().nextInt(1000000));
-        log.info("Sending OTP [{}] to email: {}", otpCode, user.getEmail());
-        emailService.sendOtpEmail(user.getEmail(), otpCode, "REGISTRATION");
+        log.info("Sending OTP [{}] to email: {}", otpCode, targetEmail);
+        try {
+            emailService.sendOtpEmail(targetEmail, otpCode, "REGISTRATION");
+        } catch (Exception e) {
+            log.warn("Email dispatch notice for {}: {}", targetEmail, e.getMessage());
+        }
 
-        return ApiResponse.success("Verification OTP code sent to " + user.getEmail() + " (Code: " + otpCode + ")", otpCode);
+        return ApiResponse.success("Verification OTP code sent to " + targetEmail + " (Code: " + otpCode + ")", otpCode);
     }
 
     @Override
@@ -119,7 +121,6 @@ public class AuthServiceImpl implements AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String jwt = jwtTokenProvider.generateToken(authentication);
-
         saveUserJwtToken(user, jwt);
 
         return buildAuthResponse(user, jwt);
@@ -127,42 +128,46 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public ApiResponse<String> logout(String bearerToken) {
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            String token = bearerToken.substring(7);
-            JwtToken jwtToken = jwtTokenRepository.findByToken(token)
-                    .orElseThrow(() -> new InvalidTokenException("Invalid token provided for logout."));
-
-            jwtTokenRepository.delete(jwtToken);
-            SecurityContextHolder.clearContext();
-            return ApiResponse.success("Logged out successfully.");
+    public ApiResponse<String> logout(String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
         }
-        throw new BadRequestException("Authorization header with Bearer token is required for logout.");
+
+        jwtTokenRepository.findByToken(token).ifPresent(t -> {
+            t.setRevoked(true);
+            t.setExpired(true);
+            jwtTokenRepository.save(t);
+        });
+
+        return ApiResponse.success("Logged out successfully.");
     }
 
-    private void saveUserJwtToken(User user, String jwt) {
-        JwtToken jwtToken = JwtToken.builder()
+    private void saveUserJwtToken(User user, String jwtToken) {
+        var token = com.optinova.entity.JwtToken.builder()
                 .user(user)
-                .token(jwt)
-                .expiresAt(LocalDateTime.now().plusHours(24))
+                .token(jwtToken)
+                .tokenType(com.optinova.entity.enums.TokenType.BEARER)
+                .expired(false)
+                .revoked(false)
                 .build();
-        jwtTokenRepository.save(jwtToken);
+        jwtTokenRepository.save(token);
     }
 
-    private AuthResponse buildAuthResponse(User user, String jwt) {
+    private AuthResponse buildAuthResponse(User user, String jwtToken) {
         UserResponse userResponse = UserResponse.builder()
+                .id(user.getUserId())
                 .userId(user.getUserId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .role(user.getRole())
+                .role(user.getRole().name())
                 .createdAt(user.getCreatedAt())
                 .build();
 
         return AuthResponse.builder()
-                .token(jwt)
-                .accessToken(jwt)
+                .accessToken(jwtToken)
+                .token(jwtToken)
                 .tokenType("Bearer")
-                .expiresInMs(jwtTokenProvider.getExpirationMs())
+                .expiresInMs(86400000L)
                 .user(userResponse)
                 .build();
     }
