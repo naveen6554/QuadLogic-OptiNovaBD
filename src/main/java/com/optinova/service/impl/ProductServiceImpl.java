@@ -119,8 +119,9 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Pageable createPageable(int pageNo, int pageSize, String sortBy, String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
-                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        String effectiveSortBy = ("id".equalsIgnoreCase(sortBy) || sortBy == null || sortBy.isBlank()) ? "productId" : sortBy;
+        Sort sort = sortDir != null && sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                Sort.by(effectiveSortBy).ascending() : Sort.by(effectiveSortBy).descending();
         return PageRequest.of(pageNo, pageSize, sort);
     }
 
