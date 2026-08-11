@@ -1,0 +1,10 @@
+target/
+.git/
+.gitignore
+.vscode/
+.idea/
+*.log
+.env
+.env.*
+application-local.properties
+hs_err_pid*
