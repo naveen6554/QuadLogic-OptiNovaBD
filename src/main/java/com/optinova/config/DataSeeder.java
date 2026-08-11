@@ -22,24 +22,27 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        userRepository.findByUsername("optiadmin").ifPresentOrElse(
-                existingAdmin -> {
-                    // Update password and role to guarantee optiadmin access
-                    existingAdmin.setPassword(passwordEncoder.encode("admin@123"));
-                    existingAdmin.setRole(Role.ADMIN);
-                    userRepository.save(existingAdmin);
-                    log.info("Default Admin account 'optiadmin' verified and updated.");
-                },
-                () -> {
-                    User newAdmin = User.builder()
-                            .username("optiadmin")
-                            .email("optiadmin@optinova.com")
-                            .password(passwordEncoder.encode("admin@123"))
-                            .role(Role.ADMIN)
-                            .build();
-                    userRepository.save(newAdmin);
-                    log.info("Default Admin account 'optiadmin' created successfully with password 'admin@123'.");
-                }
-        );
+        userRepository.findByEmail("optiadmin@optinova.com")
+                .or(() -> userRepository.findByUsername("optiadmin"))
+                .ifPresentOrElse(
+                        existingAdmin -> {
+                            existingAdmin.setUsername("optiadmin");
+                            existingAdmin.setEmail("optiadmin@optinova.com");
+                            existingAdmin.setPassword(passwordEncoder.encode("admin@123"));
+                            existingAdmin.setRole(Role.ADMIN);
+                            userRepository.save(existingAdmin);
+                            log.info("Default Admin account 'optiadmin' verified and updated.");
+                        },
+                        () -> {
+                            User newAdmin = User.builder()
+                                    .username("optiadmin")
+                                    .email("optiadmin@optinova.com")
+                                    .password(passwordEncoder.encode("admin@123"))
+                                    .role(Role.ADMIN)
+                                    .build();
+                            userRepository.save(newAdmin);
+                            log.info("Default Admin account 'optiadmin' created successfully with password 'admin@123'.");
+                        }
+                );
     }
 }

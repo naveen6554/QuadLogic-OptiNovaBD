@@ -23,6 +23,10 @@ public class AdminMapper {
             return null;
         }
 
+        java.util.List<String> imageUrls = (product.getImages() != null)
+                ? product.getImages().stream().map(com.optinova.entity.ProductImage::getImageUrl).collect(java.util.stream.Collectors.toList())
+                : java.util.Collections.emptyList();
+
         return AdminProductResponse.builder()
                 .productId(product.getProductId())
                 .name(product.getName())
@@ -31,6 +35,7 @@ public class AdminMapper {
                 .stock(product.getStock())
                 .categoryId(product.getCategory() != null ? product.getCategory().getCategoryId() : null)
                 .categoryName(product.getCategory() != null ? product.getCategory().getCategoryName() : null)
+                .imageUrls(imageUrls)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();

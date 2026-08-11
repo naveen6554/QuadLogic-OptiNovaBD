@@ -49,6 +49,9 @@ class AdminServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Mock
+    private com.optinova.repository.ProductImageRepository productImageRepository;
+
     @Spy
     private AdminMapper adminMapper = new AdminMapper();
 

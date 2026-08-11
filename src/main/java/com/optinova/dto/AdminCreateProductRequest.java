@@ -43,4 +43,11 @@ public class AdminCreateProductRequest {
     @NotNull(message = "Category ID is required")
     @Schema(description = "ID of the assigned category", example = "1")
     private Integer categoryId;
+
+    @Schema(description = "Product image URL", example = "https://images.unsplash.com/photo-1591076482161-42ce6da69f67")
+    private String imageUrl;
+
+    @Schema(description = "List of product image URLs")
+    private java.util.List<String> imageUrls;
 }
+

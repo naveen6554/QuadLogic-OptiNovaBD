@@ -16,6 +16,8 @@ import java.math.BigDecimal;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer> {
 
+    boolean existsByNameIgnoreCase(String name);
+
     Page<Product> findByCategoryCategoryId(Integer categoryId, Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE " +

@@ -1,0 +1,440 @@
+================================================================================
+               TOP 50 BACKEND DEVELOPER INTERVIEW QUESTIONS & ANSWERS
+================================================================================
+
+1. QUESTION: What is a RESTful API, and what does it mean for an HTTP method to be idempotent?
+   ANSWER: A RESTful API (Representational State Transfer) is an architectural style for designing networked applications using standard HTTP operations. Key principles include statelessness, client-server separation, cacheability, uniform interface, and resource-based URIs. 
+   An HTTP method is idempotent if making multiple identical requests has the same effect on the server state as making a single request. 
+   - GET, HEAD, PUT, DELETE, OPTIONS, and TRACE are idempotent.
+   - POST and PATCH are non-idempotent (e.g., sending POST /orders twice creates two orders unless custom idempotency handling is implemented).
+
+--------------------------------------------------------------------------------
+
+2. QUESTION: What is the difference between PUT and PATCH HTTP methods?
+   ANSWER: 
+   - PUT is intended to replace an entire resource. The request body must contain the full payload representing the updated state of the resource. If fields are omitted, they may be overwritten with null or default values depending on backend logic. PUT is idempotent.
+   - PATCH is intended for partial updates. The request body contains only the fields that need to be changed without modifying the rest of the resource. PATCH is technically non-idempotent by specification (though often implemented idempotently).
+
+--------------------------------------------------------------------------------
+
+3. QUESTION: What is the difference between HTTP Status Codes 401 Unauthorized and 403 Forbidden?
+   ANSWER: 
+   - 401 Unauthorized means "Unauthenticated." The client has not provided valid authentication credentials (e.g., missing or invalid JWT, missing API token) or credentials have expired. The server does not know who the user is.
+   - 403 Forbidden means "Unauthorized / Permission Denied." The server knows who the client is (authentication succeeded), but the authenticated user lacks the necessary rights or roles (RBAC) to access the requested resource.
+
+--------------------------------------------------------------------------------
+
+4. QUESTION: Compare SQL (Relational) vs NoSQL (Non-Relational) databases. When should you choose which?
+   ANSWER: 
+   - SQL (e.g., PostgreSQL, MySQL): Uses structured tables with fixed schemas, supports complex JOINs, and guarantees ACID compliance. Ideal for financial applications, complex relational domain models, e-commerce transactions, and strict data consistency requirements.
+   - NoSQL (e.g., MongoDB, Cassandra, Redis, DynamoDB): Schema-less or dynamic schemas, optimized for horizontal scalability and high throughput. Types include Document, Key-Value, Column-family, and Graph. Ideal for real-time analytics, unstructured data, IoT telemetry, high-write session stores, or when schema evolves rapidly.
+
+--------------------------------------------------------------------------------
+
+5. QUESTION: How do Database Indexes work (e.g., B-Trees / B+ Trees), and what are the trade-offs of using them?
+   ANSWER: 
+   - Database indexes speed up data retrieval (SELECT queries) by creating a sorted data structure (usually a B+ Tree) that allows O(log N) lookup time instead of a full table scan O(N).
+   - Trade-offs:
+     1. Write Overhead: Every INSERT, UPDATE, or DELETE requires updating both the table and the index structures, slowing down write operations.
+     2. Storage Overhead: Indexes consume additional disk space and RAM.
+     3. Over-indexing: Having too many indexes can degrade database write throughput and lead to fragmented indexes.
+
+--------------------------------------------------------------------------------
+
+6. QUESTION: What are ACID properties in relational databases?
+   ANSWER: 
+   - Atomicity: All operations in a transaction complete successfully, or all are rolled back. "All or nothing."
+   - Consistency: A transaction transitions the database from one valid state to another, maintaining all schema constraints, foreign keys, and rules.
+   - Isolation: Concurrent transactions execute without interfering with each other. Intermediate states of a transaction are hidden from other transactions.
+   - Durability: Once a transaction commits, its changes are permanently stored in non-volatile memory (disk), even in case of power failure or crash.
+
+--------------------------------------------------------------------------------
+
+7. QUESTION: What are the 4 standard Database Transaction Isolation Levels and what read anomalies do they prevent?
+   ANSWER: 
+   1. Read Uncommitted: Lowest isolation level. Allows Dirty Reads (reading uncommitted data from another transaction).
+   2. Read Committed: Prevents Dirty Reads. Allows Non-Repeatable Reads (reading different values for the same row within the same transaction if another transaction commits an update).
+   3. Repeatable Read: Prevents Dirty Reads and Non-Repeatable Reads. Prevents changes to existing rows, but may allow Phantom Reads (new rows inserted by another committed transaction appear during range queries). Default in MySQL InnoDB.
+   4. Serializable: Highest isolation level. Prevents all anomalies (Dirty Reads, Non-Repeatable Reads, Phantom Reads) by executing transactions serially or using range locks. Slowest performance.
+
+--------------------------------------------------------------------------------
+
+8. QUESTION: What is the N+1 Query Problem in ORMs (like Hibernate/JPA), and how do you solve it?
+   ANSWER: 
+   - The N+1 problem occurs when an application fetches a parent entity list (1 query), and then lazily fetches associated child entities for each parent inside a loop, resulting in N additional database queries (Total = N+1 queries).
+   - Solutions:
+     1. JOIN FETCH (in JPQL/HQL) or SQL INNER/LEFT JOIN to fetch parent and children in a single query.
+     2. Entity Graphs (@EntityGraph in Spring Data JPA).
+     3. Batch Fetching (@BatchSize(size = 20)) to fetch child entities in batches using IN clauses rather than 1-by-1.
+
+--------------------------------------------------------------------------------
+
+9. QUESTION: What is the difference between Database Sharding (Horizontal Partitioning) and Vertical Partitioning?
+   ANSWER: 
+   - Horizontal Partitioning (Sharding): Splits rows of a table across multiple database servers based on a shard key (e.g., user_id % 4). Each database has the same table schema but a subset of the rows. Used to scale write throughput and handle massive datasets.
+   - Vertical Partitioning: Splits columns of a table into different tables or servers (e.g., putting large text/blob columns in a separate table, or splitting a monolithic DB into service-specific DBs like UserDB and OrderDB).
+
+--------------------------------------------------------------------------------
+
+10. QUESTION: What is a Database Connection Pool (e.g., HikariCP) and why is it essential for backend services?
+    ANSWER: 
+    Establishing a database connection over TCP with authentication and handshake is an expensive operation (taking milliseconds). A Database Connection Pool maintains a warm pool of reusable physical database connections. When a backend thread needs DB access, it borrows an existing connection from the pool and returns it upon completing the request. This eliminates connection creation latency, limits memory overhead, and prevents server exhaustion under high concurrency.
+
+--------------------------------------------------------------------------------
+
+11. QUESTION: Explain the CAP Theorem and how it influences distributed system design.
+    ANSWER: 
+    CAP theorem states that a distributed data store can simultaneously guarantee at most two of the following three guarantees during a network partition:
+    - Consistency (C): Every read receives the most recent write or an error.
+    - Availability (A): Every non-failing node returns a non-error response, without guaranteeing it contains the latest write.
+    - Partition Tolerance (P): The system continues to operate despite network drops or delays between nodes.
+    Since network partitions (P) are inevitable in distributed systems, systems must choose between CP (Consistency over Availability, e.g., HBase, MongoDB primary node reads) and AP (Availability over Consistency, e.g., Cassandra, DynamoDB with eventual consistency).
+
+--------------------------------------------------------------------------------
+
+12. QUESTION: What is Database Normalization vs Denormalization, and when would you denormalize?
+    ANSWER: 
+    - Normalization: Organizing relational data into tables (1NF, 2NF, 3NF, BCNF) to reduce data redundancy and eliminate update/delete anomalies.
+    - Denormalization: Intentionally adding redundant data or pre-calculated fields into tables to avoid expensive JOIN operations and improve READ performance.
+    - When to Denormalize: In read-heavy systems, data warehousing, reporting, or caching scenarios where query latency is critical and write overhead/sync cost is acceptable.
+
+--------------------------------------------------------------------------------
+
+13. QUESTION: What are common Caching Strategies (Cache-Aside, Write-Through, Write-Behind, Read-Through)?
+    ANSWER: 
+    - Cache-Aside (Lazy Loading): The application code first checks the cache. If cache miss, it reads from the DB, writes the result to the cache, and returns it. Most common strategy.
+    - Read-Through: The application queries the cache service directly. The cache transparently fetches missing data from the DB and stores it before returning.
+    - Write-Through: Data is written to the cache first, and the cache synchronously writes to the DB before confirming success. Guarantees consistency but increases write latency.
+    - Write-Behind (Write-Back): Data is written to the cache, and the cache asynchronously writes updates to the DB in batches. Very fast writes, but risks data loss on cache crash.
+
+--------------------------------------------------------------------------------
+
+14. QUESTION: How do LRU (Least Recently Used) and LFU (Least Frequently Used) cache eviction policies work?
+    ANSWER: 
+    - LRU (Least Recently Used): Tracks access order. When the cache exceeds capacity, it evicts the item that has not been accessed for the longest time. Typically implemented using a Hash Map combined with a Doubly Linked List for O(1) operations.
+    - LFU (Least Frequently Used): Tracks access count/frequency. When capacity is reached, it evicts the item with the lowest access frequency. Useful when certain items are consistently popular over long durations.
+
+--------------------------------------------------------------------------------
+
+15. QUESTION: What are Cache Penetration, Cache Avalanche, and Cache Stampede, and how do you prevent them?
+    ANSWER: 
+    - Cache Penetration: Requests for non-existent keys bypass the cache and hit the database repeatedly. Fix: Cache null values with a short TTL, or use Bloom Filters to block non-existent keys.
+    - Cache Avalanche: Multiple cached keys expire at the exact same time, causing a sudden spike of traffic directly to the database. Fix: Add random jitter to TTL expiration times, or use multi-layer caching.
+    - Cache Stampede (Dog-piling): A highly popular key expires, causing hundreds of concurrent threads to calculate/fetch the same value from the DB simultaneously. Fix: Use mutex/distributed locking (e.g., Redis Redlock) so only one thread recomputes the key, or update cache asynchronously before expiration.
+
+--------------------------------------------------------------------------------
+
+16. QUESTION: What data structures does Redis support, and what are their backend use cases?
+    ANSWER: 
+    1. Strings: Key-value caching, session storage, rate limit counters (INCR).
+    2. Hashes: Object storage (e.g., user profile attributes).
+    3. Lists: Message queues, recent activity logs (LPUSH, RPOP).
+    4. Sets: Unique member tracking, tag filtering, mutual friends (SADD, SINTER).
+    5. Sorted Sets (ZSet): Leaderboards, priority queues, rate limit sliding windows (ZADD, ZRANGEBYSCORE).
+    6. Bitmaps & HyperLogLogs: Efficient boolean tracking and cardinality estimation (e.g., unique daily visitors).
+    7. Pub/Sub & Streams: Real-time messaging and event sourcing.
+
+--------------------------------------------------------------------------------
+
+17. QUESTION: What are the main trade-offs of Microservices Architecture compared to a Monolith?
+    ANSWER: 
+    - Benefits: Independent deployment and scaling, technology diversity, smaller codebase boundaries per team, fault isolation (one service crash doesn't bring down everything).
+    - Trade-offs / Challenges: Increased operational complexity (K8s, CI/CD pipelines), network latency overhead, distributed debugging/tracing difficulty, data consistency challenges (lack of distributed transactions), partial system failures.
+
+--------------------------------------------------------------------------------
+
+18. QUESTION: What is an API Gateway and what responsibilities does it handle in backend architecture?
+    ANSWER: 
+    An API Gateway is a single entry point reverse proxy sitting between clients and backend microservices.
+    Responsibilities:
+    - Request Routing & Load Balancing.
+    - Authentication & Authorization validation.
+    - Rate Limiting & Throttling.
+    - Protocol Translation (e.g., REST to gRPC).
+    - Response Aggregation (combining data from multiple microservices into one response).
+    - SSL/TLS Termination and CORS handling.
+
+--------------------------------------------------------------------------------
+
+19. QUESTION: How does the Circuit Breaker Pattern (e.g., Resilience4j) work, and what are its states?
+    ANSWER: 
+    The Circuit Breaker pattern prevents cascading failures when a downstream dependency (service/DB) becomes slow or unavailable.
+    States:
+    1. CLOSED: Normal operation. Requests flow to the downstream service. Failures are tracked.
+    2. OPEN: If failure/timeout threshold is exceeded, the circuit trips to OPEN. Requests fail fast immediately without calling the downstream service, returning fallbacks.
+    3. HALF-OPEN: After a timeout period, the circuit allows a limited number of test requests to check if the downstream service has recovered. If successful, it transitions back to CLOSED; otherwise, it returns to OPEN.
+
+--------------------------------------------------------------------------------
+
+20. QUESTION: Compare a traditional Message Queue (e.g., RabbitMQ) with an Event Streaming Platform (e.g., Apache Kafka).
+    ANSWER: 
+    - RabbitMQ (Message Queue): Push-based model. Messages are consumed and deleted from the queue upon acknowledgment. Ideal for complex routing (exchanges, routing keys), task queues, and job processing where messages do not need to be replayed.
+    - Apache Kafka (Event Streaming): Pull-based log system. Messages (events) are appended to partitioned topic logs and retained on disk based on retention policies. Consumers track their own offsets and can replay historical events. Ideal for high-throughput stream processing, event sourcing, and metric ingestion.
+
+--------------------------------------------------------------------------------
+
+21. QUESTION: What are Message Delivery Guarantees in distributed systems (At-most-once, At-least-once, Exactly-once)?
+    ANSWER: 
+    - At-most-once: Messages may be lost, but are never delivered more than once. (Fastest, no retries, acceptable for loss-tolerant telemetry).
+    - At-least-once: Messages are guaranteed to be delivered, but duplicates may occur if ACKs are lost. Requires idempotency on the consumer side.
+    - Exactly-once: Every message is delivered and processed exactly one time. Achieved through consumer idempotency, transactional producers/consumers, or deduplication keys.
+
+--------------------------------------------------------------------------------
+
+22. QUESTION: Explain Apache Kafka core architecture: Topics, Partitions, Consumer Groups, and Offsets.
+    ANSWER: 
+    - Topic: A logical channel/category to which records are published.
+    - Partition: A topic is divided into multiple partitions for scalability and parallelism. Ordering is guaranteed ONLY within a single partition.
+    - Offset: A sequential integer assigned to each record within a partition, tracking read positions.
+    - Consumer Group: A set of consumer processes working together to read from a topic. Each partition in a topic is assigned to exactly one consumer within a consumer group to enable horizontal scaling of consumers.
+
+--------------------------------------------------------------------------------
+
+23. QUESTION: Describe common Rate Limiting Algorithms (Token Bucket, Leaky Bucket, Sliding Window).
+    ANSWER: 
+    - Token Bucket: Tokens are added to a bucket at a fixed rate up to a capacity. Each request consumes a token. If the bucket is empty, the request is rejected. Supports traffic bursts.
+    - Leaky Bucket: Requests enter a FIFO queue and are processed at a constant continuous rate ("leaked"). Smooths out bursty traffic into a constant flow.
+    - Fixed Window: Counts requests in fixed time windows (e.g., per minute). Subject to burst spikes at window boundaries.
+    - Sliding Window Log/Counter: Combines current and previous window counts or logs timestamps to accurately enforce limits across rolling windows without edge spikes.
+
+--------------------------------------------------------------------------------
+
+24. QUESTION: What is the core difference between Authentication and Authorization?
+    ANSWER: 
+    - Authentication (AuthN): Verifying WHO a user/client is (e.g., validating username/password, OTP, social login, or signature of a JWT token).
+    - Authorization (AuthZ): Verifying WHAT an authenticated user is permitted to do or access (e.g., checking if user has role 'ROLE_ADMIN' to execute DELETE /users/42).
+
+--------------------------------------------------------------------------------
+
+25. QUESTION: How does a JSON Web Token (JWT) work, what are its 3 parts, and what are its trade-offs?
+    ANSWER: 
+    - Structure: A JWT consists of three Base64Url-encoded parts separated by dots (`.`): Header.Payload.Signature.
+      - Header: Algorithm and token type.
+      - Payload: Claims (user identity, expiration `exp`, roles).
+      - Signature: HMAC or RSA signature of (Header + Payload) created with a secret key or private key.
+    - Pros: Stateless, self-contained, no DB lookup required to validate authenticity on every request.
+    - Cons: Cannot be easily revoked before expiration unless a token blacklist/revocation store (e.g., in Redis) is maintained. Sensitive data should not be stored in the payload (Base64 is readable by anyone).
+
+--------------------------------------------------------------------------------
+
+26. QUESTION: What is OAuth 2.0 and how does the Authorization Code Flow work?
+    ANSWER: 
+    OAuth 2.0 is an industry-standard authorization framework that allows third-party applications to gain limited access to a user's resources without exposing credentials.
+    Authorization Code Flow Steps:
+    1. User clicks "Login with Google/Github". Client redirects user to Authorization Server.
+    2. User authenticates and grants permissions.
+    3. Authorization Server redirects user back to Client with an Authorization Code.
+    4. Client backend exchanges the Authorization Code + Client Secret with the Authorization Server for an Access Token (and optional Refresh Token).
+    5. Client backend calls Resource APIs using the Access Token.
+
+--------------------------------------------------------------------------------
+
+27. QUESTION: Session-based Auth vs Token-based Auth (JWT): When to use which?
+    ANSWER: 
+    - Session-based Auth: Server creates a session in memory/DB/Redis and sends a Session ID cookie to the browser. Server maintains state. Great for traditional web applications, monoliths, and immediate session revocation (logout).
+    - Token-based Auth (JWT): Server issues a signed token to the client. Client stores it (e.g., in HttpOnly cookie or secure storage) and attaches it in the Authorization header. Server is stateless. Great for microservices, mobile apps, cross-domain APIs, and distributed systems.
+
+--------------------------------------------------------------------------------
+
+28. QUESTION: What is Role-Based Access Control (RBAC) and how is it enforced in backend code?
+    ANSWER: 
+    RBAC assigns permissions to specific roles (e.g., ADMIN, MANAGER, USER) rather than directly to individual users. Users are assigned one or more roles.
+    Enforcement:
+    - Middleware / Filters: Intercept incoming requests and check decoded user roles against required route permissions.
+    - Annotations: In Spring Security, method-level annotations like `@PreAuthorize("hasRole('ADMIN')")` ensure business logic execution is restricted.
+
+--------------------------------------------------------------------------------
+
+29. QUESTION: Compare WebSockets, HTTP Long Polling, and Server-Sent Events (SSE).
+    ANSWER: 
+    - WebSockets: Full-duplex, bidirectional communication over a single persistent TCP connection. Low latency. Best for chat applications, multiplayer gaming, collaborative tools.
+    - HTTP Long Polling: Client sends HTTP request; server holds request open until new data is available or timeout occurs. High overhead due to repeated HTTP headers.
+    - Server-Sent Events (SSE): Unidirectional push from server to client over standard HTTP. Built-in reconnection support. Best for live news feeds, stock tickers, status update dashboards.
+
+--------------------------------------------------------------------------------
+
+30. QUESTION: What is CORS (Cross-Origin Resource Sharing) and why do browsers enforce it?
+    ANSWER: 
+    CORS is a browser security mechanism (Same-Origin Policy) that prevents web pages from making API requests to a different domain, port, or protocol than the one serving the web page, unless the server explicitly allows it.
+    - Preflight Request: For non-simple HTTP requests (e.g., custom headers, PUT/DELETE, JSON content-type), the browser sends an `OPTIONS` request first.
+    - Server Response: Server must return headers like `Access-Control-Allow-Origin: https://frontend.com` and `Access-Control-Allow-Methods: GET, POST, OPTIONS`.
+
+--------------------------------------------------------------------------------
+
+31. QUESTION: What is CSRF (Cross-Site Request Forgery) and how do backends prevent it?
+    ANSWER: 
+    CSRF is an attack where a malicious website tricks a user's browser into submitting unauthorized requests to a target website where the user is currently authenticated (via automatic cookie submission).
+    Prevention:
+    1. Anti-CSRF Tokens: Server generates unique, unpredictable tokens per session/form that clients must include in headers.
+    2. SameSite Cookie Attribute: Setting `SameSite=Strict` or `SameSite=Lax` on session cookies prevents the browser from sending cookies on cross-site requests.
+    3. Custom HTTP Headers: Requiring custom headers (e.g., `X-Requested-With`) that browsers do not send automatically on cross-origin requests.
+
+--------------------------------------------------------------------------------
+
+32. QUESTION: What is SQL Injection (SQLi) and how do Prepared Statements prevent it?
+    ANSWER: 
+    SQL Injection occurs when untrusted user input is directly concatenated into SQL query strings, allowing attackers to execute arbitrary SQL commands.
+    - Prevention: Prepared Statements (Parameterized Queries).
+    - How it works: The database compiles the SQL query structure first with placeholders (`?` or `:param`). User input is then sent separately as literal parameter values, ensuring the DB engine treats input purely as data, never as executable code.
+
+--------------------------------------------------------------------------------
+
+33. QUESTION: How do you implement Distributed Rate Limiting using Redis?
+    ANSWER: 
+    Use Redis with a Sliding Window Counter algorithm or Token Bucket via Lua scripts:
+    1. A Lua script executes atomically on Redis to avoid race conditions between concurrent backend instances.
+    2. Uses a Sorted Set (ZSET) storing timestamps of user requests.
+    3. Key format: `rate_limit:{user_id}`.
+    4. Remove members older than `current_time - window_size`.
+    5. Count remaining requests. If count < limit, add `current_timestamp` to ZSET and allow request; otherwise, reject with HTTP 429 Too Many Requests.
+
+--------------------------------------------------------------------------------
+
+34. QUESTION: Explain Load Balancing Algorithms: Round Robin, Least Connections, IP Hash, and Consistent Hashing.
+    ANSWER: 
+    - Round Robin: Distributes incoming requests sequentially across the pool of servers. Simple, best for servers of equal spec.
+    - Least Connections: Routes requests to the server with the fewest active connections. Ideal for long-lived connections or varying request workloads.
+    - IP Hash: Hashes client IP to determine which server receives the request. Guarantees user session stickiness to a specific server.
+    - Consistent Hashing: Maps both servers and keys to a virtual ring. Minimizes key re-mapping when backend nodes are added or removed. Critical for distributed caches (e.g., Memcached, Redis clusters).
+
+--------------------------------------------------------------------------------
+
+35. QUESTION: When should work be processed Asynchronously using Background Workers/Queues instead of Synchronously?
+    ANSWER: 
+    Use Asynchronous processing when:
+    - The task is time-consuming (e.g., generating PDF reports, video encoding, sending bulk emails, image resizing).
+    - Third-party API integration latency is unpredictable (e.g., payment webhooks, external notifications).
+    - High-throughput ingestion is needed without blocking HTTP request threads.
+    - The user does not need an immediate inline HTTP response to continue their workflow.
+
+--------------------------------------------------------------------------------
+
+36. QUESTION: What is Thread Pool Exhaustion in backend applications, and how do you size thread pools?
+    ANSWER: 
+    Thread pool exhaustion happens when all worker threads in a pool are blocked waiting for slow I/O (DB queries, external HTTP calls), causing incoming requests to queue up or be rejected.
+    Sizing Guidelines:
+    - CPU-bound tasks: Number of threads = Number of Available CPU Cores + 1.
+    - I/O-bound tasks (DB/Network): Number of threads = CPU Cores * (1 + Wait Time / Service Time). 
+    - Use non-blocking reactive/async I/O frameworks (e.g., Netty, Spring WebFlux, Node.js) for ultra-high concurrency I/O.
+
+--------------------------------------------------------------------------------
+
+37. QUESTION: What is Dependency Injection (DI) and Inversion of Control (IoC) in frameworks like Spring?
+    ANSWER: 
+    - Inversion of Control (IoC): A design principle where the control of object creation, lifecycle management, and dependency binding is transferred from the application code to a framework container.
+    - Dependency Injection (DI): A pattern implementing IoC where object dependencies are "injected" into a class (via constructor, setter, or field) rather than the class creating dependencies internally using `new`. Enables loose coupling, code reusability, and unit testability (easy mocking).
+
+--------------------------------------------------------------------------------
+
+38. QUESTION: What are Spring Bean Scopes?
+    ANSWER: 
+    1. Singleton (Default): Single instance per Spring IoC container. Shared across all requests.
+    2. Prototype: Creates a brand new bean instance every time it is requested from the container.
+    3. Request (Web): One instance per single HTTP request lifecycle.
+    4. Session (Web): One instance per HTTP session lifecycle.
+    5. Application / WebServer: One instance per ServletContext lifecycle.
+
+--------------------------------------------------------------------------------
+
+39. QUESTION: Compare Optimistic Locking vs Pessimistic Locking in Database Concurrency Control.
+    ANSWER: 
+    - Optimistic Locking: Assumes conflict is rare. Uses a `@Version` field (integer/timestamp) in the record. When updating, SQL checks `WHERE id = x AND version = old_version`. If another transaction modified the row in the meantime, update count is 0 and an exception is thrown. Ideal for read-heavy systems.
+    - Pessimistic Locking: Assumes conflict is likely. Explicitly locks the row using database locks (`SELECT ... FOR UPDATE`). Prevents other transactions from reading or modifying the locked row until the transaction completes. Ideal for high-contention write scenarios (e.g., inventory deduction, banking balance changes).
+
+--------------------------------------------------------------------------------
+
+40. QUESTION: How do you design an Idempotent API for Payment Processing?
+    ANSWER: 
+    1. The client generates a unique `Idempotency-Key` (UUID) and sends it in the HTTP request header.
+    2. The backend receives the request and checks Redis/DB for the existence of `Idempotency-Key`.
+    3. If Key exists and processing completed: Return the cached response immediately without re-executing payment.
+    4. If Key exists and state is PROCESSING: Return HTTP 409 Conflict or 429 to prevent concurrent processing.
+    5. If Key does not exist: Save `Idempotency-Key` with status IN_PROGRESS, process payment, update status to COMPLETED, store result payload, and return response.
+
+--------------------------------------------------------------------------------
+
+41. QUESTION: How do you handle Distributed Transactions across Microservices (Saga Pattern vs Two-Phase Commit)?
+    ANSWER: 
+    - Two-Phase Commit (2PC): A coordinator manages Prepare and Commit phases across all DBs. Guarantees strong consistency (ACID), but creates tight coupling, blocking locks, and low performance.
+    - Saga Pattern: A sequence of local transactions across microservices. Each service updates its local DB and publishes an event. If a step fails, the Saga executes a series of Compensating Transactions to undo earlier changes. Can be Orchestration-based (central coordinator) or Choreography-based (event driven). Preferred in microservices.
+
+--------------------------------------------------------------------------------
+
+42. QUESTION: What is Replication Lag in Database Read Replicas and how do you handle it?
+    ANSWER: 
+    Replication lag is the delay between writing data to a Primary/Leader DB node and that data being asynchronously copied to Read Replica nodes.
+    Handling strategies:
+    - Read-your-own-writes consistency: Send reads to the Primary node for a short period after a user performs a write operation (e.g., user profile update).
+    - Monotonic reads: Route a given user's requests consistently to the same replica.
+    - Critical Path Routing: Sensitive operations (e.g., financial ledger checks) always read from Primary.
+
+--------------------------------------------------------------------------------
+
+43. QUESTION: What is Service Discovery (e.g., Netflix Eureka, Consul, Kubernetes DNS) and why is it needed?
+    ANSWER: 
+    In cloud environments, microservice instances scale dynamically, causing IP addresses and ports to change continuously.
+    - Service Registry: A centralized database of running service instances and their current IP/port network locations.
+    - Client-side / Server-side Discovery: Service consumers query the Service Registry or API Gateway load balancer to look up location endpoints dynamically before making RPC/HTTP calls.
+
+--------------------------------------------------------------------------------
+
+44. QUESTION: What causes a Deadlock in Databases or Multithreaded applications, and how do you handle it?
+    ANSWER: 
+    A deadlock occurs when two or more threads/transactions are blocked forever, each holding a resource the other needs. (Coffman Conditions: Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait).
+    Prevention & Mitigation:
+    - Always acquire locks/resources in a strict, consistent global order across all codebase locations.
+    - Set transaction timeouts (`innodb_lock_wait_timeout` or statement timeouts).
+    - Database Deadlock Detectors automatically abort and rollback one of the transactions (the deadlock victim) allowing the other to complete.
+
+--------------------------------------------------------------------------------
+
+45. QUESTION: How do Connection Leaks and Memory Leaks occur in Java/Spring applications, and how do you diagnose them?
+    ANSWER: 
+    - Connection Leaks: Occur when database connections or HTTP client connections are checked out of a pool but not closed in a `try-with-resources` or `finally` block when errors occur.
+    - Memory Leaks: Unintentional references held in long-lived static variables, unmanaged ThreadLocals, or event listeners preventing Garbage Collection.
+    - Diagnosis Tools: Use APMs (Datadog, New Relic), Heap Dumps analyzed with Eclipse MAT or VisualVM, and HikariCP leak detection thresholds (`leakDetectionThreshold = 2000ms`).
+
+--------------------------------------------------------------------------------
+
+46. QUESTION: What is Distributed Tracing and how do Correlation IDs / OpenTelemetry work?
+    ANSWER: 
+    When an HTTP request triggers a cascade of calls across 10 microservices, tracking logs becomes difficult.
+    - Correlation ID (Trace ID): A unique request identifier generated at the API Gateway and passed downstream in HTTP headers (`X-Trace-Id` or W3C Trace Context `traceparent`).
+    - OpenTelemetry / Jaeger / Zipkin: Instrument microservices so every log entry and RPC span includes the Trace ID. Developers can search central logging (ELK / Grafana Loki) to visualize the entire request execution path and latency breakdown.
+
+--------------------------------------------------------------------------------
+
+47. QUESTION: What are common reasons why a Database Query Optimizer might ignore an Index?
+    ANSWER: 
+    1. Function or Operation on Column: Using `WHERE UPPER(email) = 'USER@MAIL.COM'` or `WHERE age + 1 > 18` prevents B-Tree index lookup.
+    2. Wildcard Prefix in LIKE: `WHERE name LIKE '%john'` cannot use a standard index (requires full scan). `WHERE name LIKE 'john%'` can use an index.
+    3. Low Cardinality: If a column has very few distinct values (e.g., `gender`), the DB optimizer determines a full table scan is cheaper than index lookup.
+    4. Implicit Type Conversion: Comparing a VARCHAR column with an INTEGER value without explicit casting.
+
+--------------------------------------------------------------------------------
+
+48. QUESTION: Why are Liveness/Readiness Probes and Graceful Shutdown important in production backend deployment?
+    ANSWER: 
+    - Liveness Probe: Checks if the application process is alive. If failed, orchestrators (Kubernetes) restart the container.
+    - Readiness Probe: Checks if the application is ready to accept traffic (e.g., DB connections established, caches warmed). If failed, orchestrators temporarily remove the pod from load balancer routing.
+    - Graceful Shutdown: When receiving SIGTERM, the application stops accepting new requests, finishes processing active inflight HTTP requests/queues within a timeout window, and closes DB connection pools gracefully before terminating.
+
+--------------------------------------------------------------------------------
+
+49. QUESTION: How do you size Database Connection Pools relative to CPU cores?
+    ANSWER: 
+    Contrary to intuition, larger connection pools do NOT improve throughput and often degrade performance due to disk I/O seek contention and context switching.
+    Formula (HikariCP recommendation):
+    `Connections = (CPU_Cores * 2) + Effective_Spindle_Count`
+    For example, a 4-core server with SSD storage handles maximum throughput with a connection pool size of around 9 to 10 connections.
+
+--------------------------------------------------------------------------------
+
+50. QUESTION: How do Database Migration tools (Flyway / Liquibase) enable zero-downtime schema updates?
+    ANSWER: 
+    Database migration tools manage SQL schema changes as versioned scripts (`V1__init.sql`, `V2__add_index.sql`) tracked in a `schema_version` database table.
+    Zero-Downtime Deployment Strategy (Expand-Contract Pattern):
+    1. Expand Phase: Deploy DB migration that adds new columns/tables in a non-breaking way (e.g., add new column `phone_number` alongside old `mobile`).
+    2. Deploy Code Phase: Deploy backend code that writes to both old and new columns, reading from new.
+    3. Contract Phase: Deploy final migration to drop old unused columns/tables after verifying stability.
+================================================================================

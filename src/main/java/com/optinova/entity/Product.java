@@ -37,6 +37,9 @@ public class Product {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "cost_price", precision = 10, scale = 2)
+    private BigDecimal costPrice;
+
     @Column(name = "stock", nullable = false)
     private Integer stock;
 
@@ -70,5 +73,15 @@ public class Product {
 
     public void setStockQuantity(Integer stockQuantity) {
         this.stock = stockQuantity;
+    }
+
+    public BigDecimal getEffectiveCostPrice() {
+        if (costPrice != null && costPrice.compareTo(BigDecimal.ZERO) > 0) {
+            return costPrice;
+        }
+        if (price != null) {
+            return price.multiply(new BigDecimal("0.60")).setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        return BigDecimal.ZERO;
     }
 }

@@ -68,4 +68,12 @@ public interface AdminService {
      * @return RevenueReportResponse DTO
      */
     RevenueReportResponse getOverallRevenue();
+
+    AnalyticsReportResponse getDetailedDailyAnalytics();
+    AnalyticsReportResponse getDetailedMonthlyAnalytics();
+    AnalyticsReportResponse getDetailedYearlyAnalytics();
+    AnalyticsReportResponse getDetailedOverallAnalytics();
+    AnalyticsReportResponse getCustomAnalytics(java.time.LocalDate startDate, java.time.LocalDate endDate);
+    List<InvoiceDto> getAllInvoices();
+    InvoiceDto getInvoiceById(String invoiceId);
 }

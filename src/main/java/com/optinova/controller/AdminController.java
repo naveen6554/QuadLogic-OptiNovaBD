@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -126,5 +127,102 @@ public class AdminController {
     public ResponseEntity<RevenueReportResponse> getOverallRevenue() {
         log.info("REST GET request for overall lifetime revenue analytics");
         return ResponseEntity.ok(adminService.getOverallRevenue());
+    }
+
+    @GetMapping("/analytics/daily")
+    @Operation(summary = "Get Detailed Daily Analytics", description = "Calculates daily revenue, profit, loss, cost, and hourly chart breakdown.")
+    public ResponseEntity<AnalyticsReportResponse> getDetailedDailyAnalytics() {
+        log.info("REST GET request for detailed daily analytics");
+        return ResponseEntity.ok(adminService.getDetailedDailyAnalytics());
+    }
+
+    @GetMapping("/analytics/monthly")
+    @Operation(summary = "Get Detailed Monthly Analytics", description = "Calculates monthly revenue, profit, loss, cost, and daily chart breakdown.")
+    public ResponseEntity<AnalyticsReportResponse> getDetailedMonthlyAnalytics() {
+        log.info("REST GET request for detailed monthly analytics");
+        return ResponseEntity.ok(adminService.getDetailedMonthlyAnalytics());
+    }
+
+    @GetMapping("/analytics/yearly")
+    @Operation(summary = "Get Detailed Yearly Analytics", description = "Calculates yearly revenue, profit, loss, cost, and monthly chart breakdown.")
+    public ResponseEntity<AnalyticsReportResponse> getDetailedYearlyAnalytics() {
+        log.info("REST GET request for detailed yearly analytics");
+        return ResponseEntity.ok(adminService.getDetailedYearlyAnalytics());
+    }
+
+    @GetMapping("/analytics/overall")
+    @Operation(summary = "Get Detailed Overall Analytics", description = "Calculates lifetime business revenue, profit, loss, cost, and trend chart breakdown.")
+    public ResponseEntity<AnalyticsReportResponse> getDetailedOverallAnalytics() {
+        log.info("REST GET request for detailed overall analytics");
+        return ResponseEntity.ok(adminService.getDetailedOverallAnalytics());
+    }
+
+    @GetMapping("/analytics/custom")
+    @Operation(summary = "Get Custom Range Analytics", description = "Calculates analytics for custom start and end date range.")
+    public ResponseEntity<AnalyticsReportResponse> getCustomAnalytics(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate) {
+        log.info("REST GET request for custom date analytics: {} to {}", startDate, endDate);
+        return ResponseEntity.ok(adminService.getCustomAnalytics(startDate, endDate));
+    }
+
+    @GetMapping("/invoices")
+    @Operation(summary = "Get All Invoices", description = "Retrieves invoice records generated from customer orders.")
+    public ResponseEntity<List<InvoiceDto>> getAllInvoices() {
+        log.info("REST GET request for all customer invoices");
+        return ResponseEntity.ok(adminService.getAllInvoices());
+    }
+
+    @GetMapping("/invoices/{id}")
+    @Operation(summary = "Get Invoice By ID", description = "Retrieves invoice details for a specific invoice ID or order ID.")
+    public ResponseEntity<InvoiceDto> getInvoiceById(@PathVariable("id") String id) {
+        log.info("REST GET request for invoice ID: {}", id);
+        return ResponseEntity.ok(adminService.getInvoiceById(id));
+    }
+
+    @GetMapping("/analytics/export/csv")
+    @Operation(summary = "Export Analytics CSV", description = "Generates and returns downloadable CSV report for selected period.")
+    public ResponseEntity<byte[]> exportAnalyticsCsv(@RequestParam(defaultValue = "OVERALL") String period) {
+        log.info("REST GET request to export CSV for period: {}", period);
+        AnalyticsReportResponse report;
+        if ("DAILY".equalsIgnoreCase(period)) report = adminService.getDetailedDailyAnalytics();
+        else if ("MONTHLY".equalsIgnoreCase(period)) report = adminService.getDetailedMonthlyAnalytics();
+        else if ("YEARLY".equalsIgnoreCase(period)) report = adminService.getDetailedYearlyAnalytics();
+        else report = adminService.getDetailedOverallAnalytics();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Date,Order ID,Invoice ID,Customer,Email,Items,Revenue,Product Cost,Expense,Tax,Profit,Loss,Payment Status,Order Status\n");
+        if (report.getInvoices() != null) {
+            for (InvoiceDto inv : report.getInvoices()) {
+                BigDecimal rev = inv.getTotalAmount() != null ? inv.getTotalAmount() : BigDecimal.ZERO;
+                BigDecimal cost = rev.multiply(new BigDecimal("0.60")).setScale(2, java.math.RoundingMode.HALF_UP);
+                BigDecimal exp = rev.multiply(new BigDecimal("0.02")).setScale(2, java.math.RoundingMode.HALF_UP);
+                BigDecimal net = rev.subtract(cost).subtract(exp);
+                BigDecimal profit = net.compareTo(BigDecimal.ZERO) > 0 ? net : BigDecimal.ZERO;
+                BigDecimal loss = net.compareTo(BigDecimal.ZERO) < 0 ? net.abs() : BigDecimal.ZERO;
+
+                sb.append(inv.getOrderDate() != null ? inv.getOrderDate().toLocalDate() : java.time.LocalDate.now()).append(",")
+                  .append(inv.getOrderId()).append(",")
+                  .append(inv.getInvoiceId()).append(",")
+                  .append("\"").append(inv.getCustomerName() != null ? inv.getCustomerName().replace("\"", "\"\"") : "").append("\",")
+                  .append(inv.getCustomerEmail()).append(",")
+                  .append(inv.getNumberOfItems() != null ? inv.getNumberOfItems() : 1).append(",")
+                  .append(rev).append(",")
+                  .append(cost).append(",")
+                  .append(exp).append(",")
+                  .append(inv.getTax() != null ? inv.getTax() : BigDecimal.ZERO).append(",")
+                  .append(profit).append(",")
+                  .append(loss).append(",")
+                  .append(inv.getPaymentStatus()).append(",")
+                  .append(inv.getOrderStatus()).append("\n");
+            }
+        }
+        byte[] csvBytes = sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        String filename = "OptiNova-" + period.toUpperCase() + "-Analytics.csv";
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .header(org.springframework.http.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, org.springframework.http.HttpHeaders.CONTENT_DISPOSITION)
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=utf-8"))
+                .body(csvBytes);
     }
 }

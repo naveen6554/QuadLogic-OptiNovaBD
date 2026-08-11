@@ -8,6 +8,7 @@ C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\controll
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\controller\OrderController.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\controller\ProductController.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\controller\ProductImageController.java
+C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\controller\UserOrderController.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\AddToCartRequest.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\ApiResponse.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\AuthResponse.java
@@ -22,15 +23,19 @@ C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\Logi
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\OrderDto.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\OrderItemDto.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\PageResponse.java
+C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\PaymentVerificationRequest.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\ProductDto.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\ProductImageDto.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\ProductImageRequest.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\ProductRequest.java
+C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\RazorpayOrderResponse.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\RegisterRequest.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\ResetPasswordRequest.java
+C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\SuccessOrderProductDto.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\UpdateCartItemRequest.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\UpdateOrderStatusRequest.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\UpdatePaymentStatusRequest.java
+C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\UserOrdersResponse.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\UserResponse.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\dto\VerifyOtpRequest.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\entity\CartItem.java
@@ -88,7 +93,9 @@ C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\impl\PasswordResetServiceImpl.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\impl\ProductImageServiceImpl.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\impl\ProductServiceImpl.java
+C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\impl\RazorpayServiceImpl.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\OrderService.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\PasswordResetService.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\ProductImageService.java
 C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\ProductService.java
+C:\StringStack\OptiNova\QuadLogic-OptiNovaBD\src\main\java\com\optinova\service\RazorpayService.java

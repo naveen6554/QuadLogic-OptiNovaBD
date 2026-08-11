@@ -52,4 +52,8 @@ public interface OrderRepository extends JpaRepository<Order, String> {
 
     @Query("SELECT COALESCE(COUNT(o), 0) FROM Order o WHERE o.status = :status")
     Long countOverallOrders(@Param("status") OrderStatus status);
+
+    List<Order> findAllByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime startDate, LocalDateTime endDate);
+
+    List<Order> findAllByOrderByCreatedAtDesc();
 }

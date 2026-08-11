@@ -40,6 +40,9 @@ public class AdminProductResponse {
     @Schema(description = "Associated category name", example = "Sunglasses")
     private String categoryName;
 
+    @Schema(description = "List of product image URLs")
+    private java.util.List<String> imageUrls;
+
     @Schema(description = "Creation timestamp")
     private LocalDateTime createdAt;
 
