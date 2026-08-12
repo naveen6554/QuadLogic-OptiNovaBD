@@ -1,11 +1,15 @@
 package com.optinova.config;
 
 import com.optinova.entity.Category;
+import com.optinova.entity.Order;
+import com.optinova.entity.OrderItem;
 import com.optinova.entity.Product;
 import com.optinova.entity.ProductImage;
 import com.optinova.entity.User;
+import com.optinova.entity.enums.OrderStatus;
 import com.optinova.entity.enums.Role;
 import com.optinova.repository.CategoryRepository;
+import com.optinova.repository.OrderRepository;
 import com.optinova.repository.ProductRepository;
 import com.optinova.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +20,11 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Automatically seeds default Administrator account, all 6 Categories, and complete 87 OptiNova Eyewear Products into the database.
+ * Automatically seeds default Administrator account, all 6 Categories, 87 Eyewear Products, and historical customer Orders.
  */
 @Slf4j
 @Component
@@ -29,37 +34,37 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
-        seedAdminUser();
+        User admin = seedAdminUser();
         seedFullCatalog();
+        seedPastOrders(admin);
     }
 
-    private void seedAdminUser() {
-        userRepository.findByEmail("optiadmin@optinova.com")
+    private User seedAdminUser() {
+        return userRepository.findByEmail("optiadmin@optinova.com")
                 .or(() -> userRepository.findByUsername("optiadmin"))
-                .ifPresentOrElse(
-                        existingAdmin -> {
-                            existingAdmin.setUsername("optiadmin");
-                            existingAdmin.setEmail("optiadmin@optinova.com");
-                            existingAdmin.setPassword(passwordEncoder.encode("admin@123"));
-                            existingAdmin.setRole(Role.ADMIN);
-                            userRepository.save(existingAdmin);
-                            log.info("Default Admin account 'optiadmin' verified and updated.");
-                        },
-                        () -> {
-                            User newAdmin = User.builder()
-                                    .username("optiadmin")
-                                    .email("optiadmin@optinova.com")
-                                    .password(passwordEncoder.encode("admin@123"))
-                                    .role(Role.ADMIN)
-                                    .build();
-                            userRepository.save(newAdmin);
-                            log.info("Default Admin account 'optiadmin' created successfully with password 'admin@123'.");
-                        }
-                );
+                .map(existingAdmin -> {
+                    existingAdmin.setUsername("optiadmin");
+                    existingAdmin.setEmail("optiadmin@optinova.com");
+                    existingAdmin.setPassword(passwordEncoder.encode("admin@123"));
+                    existingAdmin.setRole(Role.ADMIN);
+                    log.info("Default Admin account 'optiadmin' verified and updated.");
+                    return userRepository.save(existingAdmin);
+                })
+                .orElseGet(() -> {
+                    User newAdmin = User.builder()
+                            .username("optiadmin")
+                            .email("optiadmin@optinova.com")
+                            .password(passwordEncoder.encode("admin@123"))
+                            .role(Role.ADMIN)
+                            .build();
+                    log.info("Default Admin account 'optiadmin' created successfully with password 'admin@123'.");
+                    return userRepository.save(newAdmin);
+                });
     }
 
     private void seedFullCatalog() {
@@ -71,7 +76,6 @@ public class DataSeeder implements CommandLineRunner {
 
         log.info("Seeding full 87 OptiNova Eyewear Products and 6 Categories into database...");
 
-        // Ensure 6 Categories exist
         Map<Integer, Category> categories = new HashMap<>();
         categories.put(1, getOrCreateCategory(1, "Prescription Glasses"));
         categories.put(2, getOrCreateCategory(2, "Reading Glass"));
@@ -80,7 +84,6 @@ public class DataSeeder implements CommandLineRunner {
         categories.put(5, getOrCreateCategory(5, "Luxury Glasses"));
         categories.put(6, getOrCreateCategory(6, "Sports Glasses"));
 
-        // Seed 87 Products with exact prices, stock counts, descriptions & ImageKit URLs
         addProduct(1, "Clubmaster", "Classic Clubmaster prescription glasses featuring a timeless browline frame, lightweight construction, comfortable nose pads, and durable materials.", new BigDecimal("9000.00"), 23, categories.get(1), "https://ik.imagekit.io/StringStackmeghana/glasses/1%20%20%20Clubmaster.jpg?updatedAt=1785242393811");
         addProduct(2, "Round Metal", "Elegant Round Metal prescription glasses with a slim stainless steel frame, lightweight design, and premium comfort.", new BigDecimal("8500.00"), 30, categories.get(1), "https://ik.imagekit.io/StringStackmeghana/glasses/2%20%20%20Round%20Metal.jpg");
         addProduct(3, "Aviator Optical", "Modern Aviator Optical prescription glasses with a lightweight metal frame, adjustable nose pads, and stylish oversized design.", new BigDecimal("9800.00"), 21, categories.get(1), "https://ik.imagekit.io/StringStackmeghana/glasses/3%20%20%20%20%20Aviator%20Optical.jpg");
@@ -102,7 +105,6 @@ public class DataSeeder implements CommandLineRunner {
         addProduct(19, "Flexi Comfort", "Flexible Flexi Comfort prescription glasses with memory-flex frame technology, lightweight construction, and superior comfort.", new BigDecimal("9600.00"), 32, categories.get(1), "https://ik.imagekit.io/StringStackmeghana/glasses/19%20%20%20%20%20Flexi%20Comfort.jpg");
         addProduct(20, "Vintage Metal", "Sophisticated Vintage Metal prescription glasses combining timeless craftsmanship, durable metal construction, and elegant styling.", new BigDecimal("9900.00"), 24, categories.get(1), "https://ik.imagekit.io/StringStackmeghana/glasses/20%20%20%20%20%20%20%20Vintage%20Metal.jpg");
 
-        // Reading Glasses (Category 2)
         addProduct(21, "Zenni Optical", "Affordable Zenni Optical reading glasses featuring lightweight frames, crystal-clear lenses, and comfortable construction.", new BigDecimal("2500.00"), 34, categories.get(2), "https://ik.imagekit.io/StringStackAkash/reading%20Glass/Zenni%20Optical.webp");
         addProduct(22, "Warby Parker", "Premium Warby Parker reading glasses with stylish acetate frames, scratch-resistant lenses, and exceptional comfort.", new BigDecimal("4200.00"), 30, categories.get(2), "https://ik.imagekit.io/StringStackAkash/reading%20Glass/Warby%20Parker.webp");
         addProduct(23, "TruVision Readers", "Comfortable TruVision Readers designed with lightweight materials, durable hinges, and high-quality magnification.", new BigDecimal("2800.00"), 28, categories.get(2), "https://ik.imagekit.io/StringStackAkash/reading%20Glass/TruVision%20Readers.webp");
@@ -124,7 +126,6 @@ public class DataSeeder implements CommandLineRunner {
         addProduct(39, "Clic Eyewear", "Innovative Clic Eyewear reading glasses with a magnetic front connection, lightweight construction, and convenient accessibility.", new BigDecimal("4700.00"), 22, categories.get(2), "https://ik.imagekit.io/StringStackAkash/reading%20Glass/Clic%20Eyewear.webp?updatedAt=1785233844916");
         addProduct(40, "Carrera", "Premium Carrera reading glasses combining sporty styling, durable construction, and crystal-clear reading lenses.", new BigDecimal("6100.00"), 24, categories.get(2), "https://ik.imagekit.io/StringStackAkash/reading%20Glass/Carrera.webp?updatedAt=1785233252971");
 
-        // Sunglasses (Category 3)
         addProduct(41, "ARZONAI", "Stylish ARZONAI sunglasses featuring UV400 protection, lightweight frame, polarized lenses, and modern design.", new BigDecimal("3200.00"), 30, categories.get(3), "https://ik.imagekit.io/StringStackgangadhar/Sunglasses/ARZONAI.jpg?updatedAt=1785239688042");
         addProduct(42, "SYGA", "Premium SYGA sunglasses with polarized UV400 lenses, durable frame construction, and all-day comfort.", new BigDecimal("3500.00"), 28, categories.get(3), "https://ik.imagekit.io/StringStackgangadhar/Sunglasses/SYGA.jpg?updatedAt=1785239597020");
         addProduct(43, "ROZIOR", "Elegant ROZIOR sunglasses designed with scratch-resistant polarized lenses, lightweight frame, and superior UV protection.", new BigDecimal("3800.00"), 25, categories.get(3), "https://ik.imagekit.io/StringStackgangadhar/Sunglasses/ROZIOR.jpg?updatedAt=17852395283854");
@@ -144,7 +145,6 @@ public class DataSeeder implements CommandLineRunner {
         addProduct(57, "David Jones", "Sophisticated David Jones sunglasses with durable lightweight frames, polarized lenses, and modern styling.", new BigDecimal("5400.00"), 21, categories.get(3), "https://ik.imagekit.io/StringStackNaveen/Sunglasses/DavidJones17.webp");
         addProduct(58, "Armani Exchange", "Premium Armani Exchange sunglasses featuring designer aesthetics, polarized UV400 lenses, and lightweight construction.", new BigDecimal("9100.00"), 17, categories.get(3), "https://ik.imagekit.io/StringStackNaveen/Sunglasses/ArmaniExchange18.webp");
 
-        // Digital Glasses (Category 4)
         addProduct(59, "XReal", "Advanced XReal smart digital glasses featuring augmented reality display, high-definition visuals, lightweight design, and built-in speakers.", new BigDecimal("49999.00"), 15, categories.get(4), "https://ik.imagekit.io/StringStackAkash/Luxury%20Glass/XReal.jpg");
         addProduct(60, "Vuzix", "Premium Vuzix smart glasses with enterprise-grade augmented reality technology, voice controls, and HD display.", new BigDecimal("58999.00"), 12, categories.get(4), "https://ik.imagekit.io/StringStackAkash/Luxury%20Glass/Vuzix.jpg");
         addProduct(61, "Solos", "Innovative Solos smart glasses featuring AI voice assistant, open-ear audio, fitness tracking, and Bluetooth connectivity.", new BigDecimal("34999.00"), 18, categories.get(4), "https://ik.imagekit.io/StringStackAkash/Luxury%20Glass/Solos.jpg");
@@ -156,7 +156,6 @@ public class DataSeeder implements CommandLineRunner {
         addProduct(67, "Google Glass", "Google smart glasses featuring AI-powered assistance, augmented reality capabilities, voice commands, and Android integration.", new BigDecimal("54999.00"), 10, categories.get(4), "https://ik.imagekit.io/StringStackAkash/Luxury%20Glass/Google.jpg");
         addProduct(68, "Even Realities", "Even Realities smart glasses with AI-powered display, real-time translation, navigation assistance, and lightweight comfort.", new BigDecimal("51999.00"), 11, categories.get(4), "https://ik.imagekit.io/StringStackAkash/Luxury%20Glass/Even%20Realities.jpg");
 
-        // Luxury Glasses (Category 5)
         addProduct(69, "Matsuda", "Luxury Matsuda eyewear handcrafted in Japan with premium titanium construction, precision craftsmanship, and elegant styling.", new BigDecimal("45000.00"), 10, categories.get(5), "https://ik.imagekit.io/StringStackAkash/LX/Matsuda.jpg");
         addProduct(70, "Maybach Eyewear", "Exclusive Maybach Eyewear featuring handcrafted premium materials, gold-plated detailing, and world-class optical craftsmanship.", new BigDecimal("85000.00"), 6, categories.get(5), "https://ik.imagekit.io/StringStackAkash/LX/Maybach%20Eyewear.jpg");
         addProduct(71, "Lindberg", "Minimalist Lindberg luxury eyewear crafted from ultra-light titanium with screwless engineering and unmatched all-day comfort.", new BigDecimal("52000.00"), 9, categories.get(5), "https://ik.imagekit.io/StringStackAkash/LX/Lindberg.jpg");
@@ -168,7 +167,6 @@ public class DataSeeder implements CommandLineRunner {
         addProduct(77, "Barton Perreira", "Handmade Barton Perreira luxury glasses with custom zyl acetate, refined contours, and exceptional optical clarity.", new BigDecimal("51000.00"), 10, categories.get(5), "https://ik.imagekit.io/StringStackAkash/LX/Barton%20Perreira.jpg");
         addProduct(78, "JACOB", "Ultra-exclusive JACOB luxury glasses crafted with precious metals, diamond-cut detailing, and master Italian craftsmanship.", new BigDecimal("110000.00"), 4, categories.get(5), "https://ik.imagekit.io/StringStackAkash/LX/JACOB.jpg");
 
-        // Sports Glasses (Category 6)
         addProduct(79, "Carrera Sports", "High-performance Carrera Sports glasses featuring aerodynamic wrap-around frames, shatterproof lenses, and non-slip rubber grips.", new BigDecimal("14500.00"), 18, categories.get(6), "https://ik.imagekit.io/StringStackNaveen/Sports/Carrera1.avif");
         addProduct(80, "Oakley Sports", "Oakley performance sports glasses featuring Prizm lens technology, impact-resistant O-Matter frames, and max ventilation.", new BigDecimal("18900.00"), 22, categories.get(6), "https://ik.imagekit.io/StringStackNaveen/Sports/Oakley2.avif");
         addProduct(81, "Reebok Sports", "Durable Reebok Sports glasses with flexible TR90 frames, polarized UV400 lenses, and sweat-resistant nose pads.", new BigDecimal("8900.00"), 30, categories.get(6), "https://ik.imagekit.io/StringStackNaveen/Sports/Reebok3.webp");
@@ -180,6 +178,88 @@ public class DataSeeder implements CommandLineRunner {
         addProduct(87, "Maui Jim Sports", "Maui Jim premium sports sunglasses featuring PolarizedPlus2 lens technology, vibrant color enhancement, and glare elimination.", new BigDecimal("24500.00"), 16, categories.get(6), "https://ik.imagekit.io/StringStackNaveen/Sports/Maui%20Jim9.webp");
 
         log.info("Successfully seeded complete 87 OptiNova Eyewear Products into database!");
+    }
+
+    private void seedPastOrders(User user) {
+        log.info("Checking order count in database...");
+        if (orderRepository.count() > 0) {
+            log.info("Historical orders already present in database. Skipping order seed.");
+            return;
+        }
+
+        log.info("Seeding 10 historical customer orders into database...");
+
+        createOrder("ORD-4FAC06DA", user, new BigDecimal("18700.00"), OrderStatus.SUCCESS, List.of(
+                createOrderItem(1, 1, new BigDecimal("9000.00")),
+                createOrderItem(12, 1, new BigDecimal("9700.00"))
+        ));
+
+        createOrder("ORD-E55B5D55", user, new BigDecimal("9400.00"), OrderStatus.PENDING, List.of(
+                createOrderItem(5, 1, new BigDecimal("9400.00"))
+        ));
+
+        createOrder("ORD-5719C888", user, new BigDecimal("9400.00"), OrderStatus.PENDING, List.of(
+                createOrderItem(5, 1, new BigDecimal("9400.00"))
+        ));
+
+        createOrder("ORD-84DD3F21", user, new BigDecimal("9400.00"), OrderStatus.SUCCESS, List.of(
+                createOrderItem(5, 1, new BigDecimal("9400.00"))
+        ));
+
+        createOrder("ORD-5B1D81D9", user, new BigDecimal("9000.00"), OrderStatus.SUCCESS, List.of(
+                createOrderItem(1, 1, new BigDecimal("9000.00"))
+        ));
+
+        createOrder("ORD-117B5E3C", user, new BigDecimal("9600.00"), OrderStatus.SUCCESS, List.of(
+                createOrderItem(11, 1, new BigDecimal("9600.00"))
+        ));
+
+        createOrder("ORD-96EE4B59", user, new BigDecimal("9200.00"), OrderStatus.SUCCESS, List.of(
+                createOrderItem(4, 1, new BigDecimal("9200.00"))
+        ));
+
+        createOrder("ORD-792AE88A", user, new BigDecimal("2500.00"), OrderStatus.SUCCESS, List.of(
+                createOrderItem(21, 1, new BigDecimal("2500.00"))
+        ));
+
+        createOrder("ORD-76C4DA6F", user, new BigDecimal("9200.00"), OrderStatus.SUCCESS, List.of(
+                createOrderItem(4, 1, new BigDecimal("9200.00"))
+        ));
+
+        createOrder("ORD-1538BF47", user, new BigDecimal("9800.00"), OrderStatus.SUCCESS, List.of(
+                createOrderItem(3, 1, new BigDecimal("9800.00"))
+        ));
+
+        log.info("Successfully seeded 10 historical customer orders into database!");
+    }
+
+    private OrderItem createOrderItem(Integer productId, Integer quantity, BigDecimal price) {
+        Product p = productRepository.findById(productId).orElse(null);
+        if (p == null) return null;
+        return OrderItem.builder()
+                .product(p)
+                .quantity(quantity)
+                .pricePerUnit(price)
+                .totalPrice(price.multiply(BigDecimal.valueOf(quantity)))
+                .build();
+    }
+
+    private void createOrder(String orderId, User user, BigDecimal totalAmount, OrderStatus status, List<OrderItem> items) {
+        Order order = Order.builder()
+                .orderId(orderId)
+                .user(user)
+                .totalAmount(totalAmount)
+                .status(status)
+                .build();
+
+        for (OrderItem item : items) {
+            if (item != null) {
+                item.setOrder(order);
+                order.getOrderItems().add(item);
+            }
+        }
+
+        orderRepository.save(order);
     }
 
     private Category getOrCreateCategory(Integer id, String name) {
