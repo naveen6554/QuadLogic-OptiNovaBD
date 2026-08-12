@@ -17,3 +17,11 @@ target/
 *.log
 hs_err_pid*
 package-lock.json
+
+### Secrets & Local Environment Config ###
+.env
+.env.*
+application-local.properties
+*.pem
+*.key
+credentials.json

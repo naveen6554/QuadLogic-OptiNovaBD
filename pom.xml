@@ -96,6 +96,12 @@
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- Spring Boot Starter Actuator for Health Checks -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- H2 In-Memory Database for Unit/Integration Testing -->
         <dependency>
             <groupId>com.h2database</groupId>
