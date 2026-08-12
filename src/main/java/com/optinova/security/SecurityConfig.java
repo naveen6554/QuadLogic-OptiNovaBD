@@ -17,7 +17,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 /**
  * Spring Security 6 Configuration.
- * Configures stateless session policy, public endpoint access, password encoder, JWT authentication filter, and security entry points.
+ * Configures stateless session policy, public endpoint access, password
+ * encoder, JWT authentication filter, and security entry points.
  */
 @Configuration
 @EnableWebSecurity
@@ -46,7 +47,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -54,11 +56,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 // Enable CORS configuration
-                .cors(cors -> {})
+                .cors(cors -> {
+                })
 
                 // Disable CSRF since JWT is stateless and token-based
                 .csrf(AbstractHttpConfigurer::disable)
-                
+
                 // Exception handling for unauthorized access
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
 
@@ -68,9 +71,9 @@ public class SecurityConfig {
                 // Endpoint authorization rules
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_URLS).permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
-                );
+                        .anyRequest().authenticated());
 
         // Add custom JWT filter before UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
