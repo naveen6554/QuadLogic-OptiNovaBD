@@ -61,15 +61,13 @@ public class AuthServiceImpl implements AuthService {
                     .username(finalUsername)
                     .email(targetEmail)
                     .role(userRole)
+                    .password(passwordEncoder.encode(request.getPassword()))
                     .build();
+        } else {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        try {
-            userRepository.save(user);
-        } catch (Exception ex) {
-            log.warn("User save notice for {}: {}", targetEmail, ex.getMessage());
-        }
+        userRepository.saveAndFlush(user);
 
         // Generate 6-digit OTP and send email via EmailService
         String otpCode = String.format("%06d", new java.security.SecureRandom().nextInt(1000000));
