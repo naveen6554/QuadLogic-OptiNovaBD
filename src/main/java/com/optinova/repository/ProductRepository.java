@@ -18,6 +18,8 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     boolean existsByNameIgnoreCase(String name);
 
+    java.util.Optional<Product> findByName(String name);
+
     Page<Product> findByCategoryCategoryId(Integer categoryId, Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE " +
