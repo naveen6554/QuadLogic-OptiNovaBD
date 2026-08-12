@@ -37,11 +37,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public ApiResponse<String> register(RegisterRequest request) {
-        String baseUsername = request.getUsername();
-        if (baseUsername == null || baseUsername.isBlank()) {
-            baseUsername = request.getEmail().contains("@") ? request.getEmail().split("@")[0] : request.getEmail();
+        String rawUsername = request.getUsername();
+        if (rawUsername == null || rawUsername.isBlank()) {
+            rawUsername = request.getEmail().contains("@") ? request.getEmail().split("@")[0] : request.getEmail();
         }
-        baseUsername = baseUsername.trim();
+        final String baseUsername = rawUsername.trim();
 
         String targetEmail = request.getEmail().trim();
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
@@ -134,9 +134,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         jwtTokenRepository.findByToken(token).ifPresent(t -> {
-            t.setRevoked(true);
-            t.setExpired(true);
-            jwtTokenRepository.save(t);
+            jwtTokenRepository.delete(t);
         });
 
         return ApiResponse.success("Logged out successfully.");
@@ -146,9 +144,7 @@ public class AuthServiceImpl implements AuthService {
         var token = com.optinova.entity.JwtToken.builder()
                 .user(user)
                 .token(jwtToken)
-                .tokenType(com.optinova.entity.enums.TokenType.BEARER)
-                .expired(false)
-                .revoked(false)
+                .expiresAt(java.time.LocalDateTime.now().plusDays(1))
                 .build();
         jwtTokenRepository.save(token);
     }
