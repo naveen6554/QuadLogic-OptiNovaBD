@@ -22,5 +22,5 @@ COPY --from=build /app/target/*.jar app.jar
 # Dynamic PORT binding for Railway
 EXPOSE 8080
 
-# Command to execute application JAR
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Execute Spring Boot with shell expansion so -Dserver.port=${PORT} receives Railway's assigned port
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -jar app.jar"]
