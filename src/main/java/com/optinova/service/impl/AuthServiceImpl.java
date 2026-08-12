@@ -41,43 +41,42 @@ public class AuthServiceImpl implements AuthService {
         String rawPassword = request.getPassword();
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
 
-        // Lookup existing user by email first, then username
-        User user = userRepository.findByEmailIgnoreCase(targetEmail)
+        // Lookup existing user by email or username
+        User existingUser = userRepository.findByEmailIgnoreCase(targetEmail)
                 .or(() -> userRepository.findByEmail(targetEmail))
+                .or(() -> userRepository.findByUsernameIgnoreCase(targetUsername))
+                .or(() -> userRepository.findByUsername(targetUsername))
                 .orElse(null);
 
-        if (user == null) {
-            user = userRepository.findByUsernameIgnoreCase(targetUsername)
-                    .or(() -> userRepository.findByUsername(targetUsername))
-                    .orElse(null);
-        }
-
-        if (user == null) {
-            user = User.builder()
+        final User userToSave;
+        if (existingUser == null) {
+            userToSave = User.builder()
                     .username(targetUsername)
                     .email(targetEmail)
                     .password(passwordEncoder.encode(rawPassword))
                     .role(userRole)
                     .build();
         } else {
-            user.setEmail(targetEmail);
-            user.setPassword(passwordEncoder.encode(rawPassword));
-            user.setRole(userRole);
-            if (!user.getUsername().equalsIgnoreCase(targetUsername)) {
-                boolean usernameTakenByOther = userRepository.findByUsernameIgnoreCase(targetUsername)
-                        .filter(other -> !other.getUserId().equals(user.getUserId()))
+            existingUser.setEmail(targetEmail);
+            existingUser.setPassword(passwordEncoder.encode(rawPassword));
+            existingUser.setRole(userRole);
+            if (!existingUser.getUsername().equalsIgnoreCase(targetUsername)) {
+                final Integer existingUserId = existingUser.getUserId();
+                boolean usernameTakenByOther = existingUserId != null && userRepository.findByUsernameIgnoreCase(targetUsername)
+                        .filter(other -> !other.getUserId().equals(existingUserId))
                         .isPresent();
                 if (!usernameTakenByOther) {
-                    user.setUsername(targetUsername);
+                    existingUser.setUsername(targetUsername);
                 }
             }
+            userToSave = existingUser;
         }
 
-        userRepository.saveAndFlush(user);
+        userRepository.saveAndFlush(userToSave);
 
         // Generate 6-digit OTP and send email via EmailService
         String otpCode = String.format("%06d", new java.security.SecureRandom().nextInt(1000000));
-        log.info("Sending OTP [{}] to email: {} for user: {}", otpCode, targetEmail, user.getUsername());
+        log.info("Sending OTP [{}] to email: {} for user: {}", otpCode, targetEmail, userToSave.getUsername());
         try {
             emailService.sendOtpEmail(targetEmail, otpCode, "REGISTRATION");
         } catch (Exception e) {
