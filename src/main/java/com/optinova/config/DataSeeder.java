@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Automatically seeds default Administrator account, all 6 Categories, 87 Eyewear Products, and historical customer Orders.
+ * Automatically seeds all historical User accounts, 6 Categories, 87 Eyewear Products, and Customer Orders into the database.
  */
 @Slf4j
 @Component
@@ -35,36 +35,47 @@ public class DataSeeder implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
-    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
-        User admin = seedAdminUser();
+        Map<Integer, User> userMap = seedAllUsers();
         seedFullCatalog();
-        seedPastOrders(admin);
+        seedPastOrders(userMap.get(4) != null ? userMap.get(4) : userMap.get(9));
     }
 
-    private User seedAdminUser() {
-        return userRepository.findByEmail("optiadmin@optinova.com")
-                .or(() -> userRepository.findByUsername("optiadmin"))
-                .map(existingAdmin -> {
-                    existingAdmin.setUsername("optiadmin");
-                    existingAdmin.setEmail("optiadmin@optinova.com");
-                    existingAdmin.setPassword(passwordEncoder.encode("admin@123"));
-                    existingAdmin.setRole(Role.ADMIN);
-                    log.info("Default Admin account 'optiadmin' verified and updated.");
-                    return userRepository.save(existingAdmin);
+    private Map<Integer, User> seedAllUsers() {
+        log.info("Seeding historical user accounts into database...");
+
+        Map<Integer, User> userMap = new HashMap<>();
+
+        userMap.put(1, getOrCreateUser(1, "naveen01", "vk6862491@gmail.com", "$2a$10$jFQnXbdwMBd0tD8x/LhYee4FKLRsNNPwMEKEBbQjWMSDnu3Y/BYva", Role.CUSTOMER));
+        userMap.put(3, getOrCreateUser(3, "naveen02", "kn7140990@gmail.com", "$2a$10$v8TumVUQk8hk2s6pIMdJxO99PCVUKwBm8StxSUjxQLIk4S.21QUYS", Role.CUSTOMER));
+        userMap.put(4, getOrCreateUser(4, "Naveen10", "naveenk8815@gmail.com", "$2a$10$PwtHrvTRlNYW.5n8VtxAnuFpI9jnG9quRkjsb2jsi4urNBVVYjXeu", Role.CUSTOMER));
+        userMap.put(6, getOrCreateUser(6, "aakaass.h", "akashjayan2004123@gmail.com", "$2a$10$G6r8xhtbloq4xQU/oBLYEu20oYelyqyPxUc0dG4CdEL2mlgMPaG2q", Role.CUSTOMER));
+        userMap.put(9, getOrCreateUser(9, "optiadmin", "optiadmin@optinova.com", "$2a$10$KpgLmc2.QIxlzpXwuZwWH.1iBaJkgYd02dcwhUnkt8r5EwrVdpEK.", Role.ADMIN));
+
+        log.info("Successfully seeded 5 historical user accounts into database!");
+        return userMap;
+    }
+
+    private User getOrCreateUser(Integer userId, String username, String email, String passwordHash, Role role) {
+        return userRepository.findByEmail(email)
+                .or(() -> userRepository.findByUsername(username))
+                .map(user -> {
+                    user.setUserId(userId);
+                    user.setUsername(username);
+                    user.setEmail(email);
+                    user.setPassword(passwordHash);
+                    user.setRole(role);
+                    return userRepository.save(user);
                 })
-                .orElseGet(() -> {
-                    User newAdmin = User.builder()
-                            .username("optiadmin")
-                            .email("optiadmin@optinova.com")
-                            .password(passwordEncoder.encode("admin@123"))
-                            .role(Role.ADMIN)
-                            .build();
-                    log.info("Default Admin account 'optiadmin' created successfully with password 'admin@123'.");
-                    return userRepository.save(newAdmin);
-                });
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .userId(userId)
+                        .username(username)
+                        .email(email)
+                        .password(passwordHash)
+                        .role(role)
+                        .build()));
     }
 
     private void seedFullCatalog() {
