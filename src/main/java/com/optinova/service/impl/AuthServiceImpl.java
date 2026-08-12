@@ -41,12 +41,16 @@ public class AuthServiceImpl implements AuthService {
         String rawPassword = request.getPassword();
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
 
-        // Lookup existing user by email or username
+        // Lookup existing user by email first, then username
         User user = userRepository.findByEmailIgnoreCase(targetEmail)
-                .or(() -> userRepository.findByUsernameIgnoreCase(targetUsername))
                 .or(() -> userRepository.findByEmail(targetEmail))
-                .or(() -> userRepository.findByUsername(targetUsername))
                 .orElse(null);
+
+        if (user == null) {
+            user = userRepository.findByUsernameIgnoreCase(targetUsername)
+                    .or(() -> userRepository.findByUsername(targetUsername))
+                    .orElse(null);
+        }
 
         if (user == null) {
             user = User.builder()
@@ -56,18 +60,24 @@ public class AuthServiceImpl implements AuthService {
                     .role(userRole)
                     .build();
         } else {
-            // Update existing user credentials so whatever the user specified during registration is exact!
-            user.setUsername(targetUsername);
             user.setEmail(targetEmail);
             user.setPassword(passwordEncoder.encode(rawPassword));
             user.setRole(userRole);
+            if (!user.getUsername().equalsIgnoreCase(targetUsername)) {
+                boolean usernameTakenByOther = userRepository.findByUsernameIgnoreCase(targetUsername)
+                        .filter(other -> !other.getUserId().equals(user.getUserId()))
+                        .isPresent();
+                if (!usernameTakenByOther) {
+                    user.setUsername(targetUsername);
+                }
+            }
         }
 
         userRepository.saveAndFlush(user);
 
         // Generate 6-digit OTP and send email via EmailService
         String otpCode = String.format("%06d", new java.security.SecureRandom().nextInt(1000000));
-        log.info("Sending OTP [{}] to email: {} for user: {}", otpCode, targetEmail, targetUsername);
+        log.info("Sending OTP [{}] to email: {} for user: {}", otpCode, targetEmail, user.getUsername());
         try {
             emailService.sendOtpEmail(targetEmail, otpCode, "REGISTRATION");
         } catch (Exception e) {
