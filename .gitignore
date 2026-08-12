@@ -21,6 +21,7 @@ package-lock.json
 ### Secrets & Local Environment Config ###
 .env
 .env.*
+!.env.example
 application-local.properties
 *.pem
 *.key
