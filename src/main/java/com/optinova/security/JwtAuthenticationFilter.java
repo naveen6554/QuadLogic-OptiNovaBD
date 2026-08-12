@@ -39,11 +39,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = getJwtFromRequest(request);
 
         if (StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
-            boolean isTokenValidInDb = jwtTokenRepository.findByToken(token)
-                    .map(t -> t.getExpiresAt() != null && t.getExpiresAt().isAfter(LocalDateTime.now()))
+            boolean isExpiredInDb = jwtTokenRepository.findByToken(token)
+                    .map(t -> t.getExpiresAt() != null && t.getExpiresAt().isBefore(LocalDateTime.now()))
                     .orElse(false);
 
-            if (isTokenValidInDb) {
+            if (!isExpiredInDb) {
                 String email = tokenProvider.getEmailFromToken(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
