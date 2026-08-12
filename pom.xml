@@ -102,11 +102,10 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- H2 In-Memory Database for Unit/Integration Testing -->
+        <!-- H2 In-Memory Database for Fallback Runtime & Testing -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <!-- Spring Boot Starter Test (JUnit 5, Mockito, AssertJ) -->
