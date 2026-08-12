@@ -46,7 +46,9 @@ public class AuthServiceImpl implements AuthService {
         String targetEmail = request.getEmail().trim();
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
 
-        User user = userRepository.findByEmail(targetEmail)
+        User user = userRepository.findByEmailIgnoreCase(targetEmail)
+                .or(() -> userRepository.findByUsernameIgnoreCase(baseUsername))
+                .or(() -> userRepository.findByEmail(targetEmail))
                 .or(() -> userRepository.findByUsername(baseUsername))
                 .orElse(null);
 
@@ -84,7 +86,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse verifyOtp(VerifyOtpRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailIgnoreCase(request.getEmail())
+                .or(() -> userRepository.findByUsernameIgnoreCase(request.getEmail()))
+                .or(() -> userRepository.findByEmail(request.getEmail()))
                 .or(() -> userRepository.findByUsername(request.getEmail()))
                 .orElseGet(() -> {
                     String email = request.getEmail();
@@ -113,7 +117,9 @@ public class AuthServiceImpl implements AuthService {
         String identifier = request.getEmail() != null ? request.getEmail().trim() : "";
         String inputPassword = request.getPassword() != null ? request.getPassword() : "";
 
-        User user = userRepository.findByEmail(identifier)
+        User user = userRepository.findByEmailIgnoreCase(identifier)
+                .or(() -> userRepository.findByUsernameIgnoreCase(identifier))
+                .or(() -> userRepository.findByEmail(identifier))
                 .or(() -> userRepository.findByUsername(identifier))
                 .orElseThrow(() -> new BadRequestException("Invalid email/username or password."));
 
