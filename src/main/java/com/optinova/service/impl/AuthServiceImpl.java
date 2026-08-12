@@ -11,10 +11,6 @@ import com.optinova.service.AuthService;
 import com.optinova.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,48 +26,48 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final JwtTokenRepository jwtTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
 
     @Override
     @Transactional
     public ApiResponse<String> register(RegisterRequest request) {
+        String targetEmail = request.getEmail() != null ? request.getEmail().trim() : "";
         String rawUsername = request.getUsername();
         if (rawUsername == null || rawUsername.isBlank()) {
-            rawUsername = request.getEmail().contains("@") ? request.getEmail().split("@")[0] : request.getEmail();
+            rawUsername = targetEmail.contains("@") ? targetEmail.split("@")[0] : targetEmail;
         }
-        final String baseUsername = rawUsername.trim();
-
-        String targetEmail = request.getEmail().trim();
+        String targetUsername = rawUsername.trim();
+        String rawPassword = request.getPassword();
         Role userRole = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
 
+        // Lookup existing user by email or username
         User user = userRepository.findByEmailIgnoreCase(targetEmail)
-                .or(() -> userRepository.findByUsernameIgnoreCase(baseUsername))
+                .or(() -> userRepository.findByUsernameIgnoreCase(targetUsername))
                 .or(() -> userRepository.findByEmail(targetEmail))
-                .or(() -> userRepository.findByUsername(baseUsername))
+                .or(() -> userRepository.findByUsername(targetUsername))
                 .orElse(null);
 
         if (user == null) {
-            String finalUsername = baseUsername;
-            if (userRepository.existsByUsername(finalUsername)) {
-                finalUsername = baseUsername + "_" + (System.currentTimeMillis() % 10000);
-            }
             user = User.builder()
-                    .username(finalUsername)
+                    .username(targetUsername)
                     .email(targetEmail)
+                    .password(passwordEncoder.encode(rawPassword))
                     .role(userRole)
-                    .password(passwordEncoder.encode(request.getPassword()))
                     .build();
         } else {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            // Update existing user credentials so whatever the user specified during registration is exact!
+            user.setUsername(targetUsername);
+            user.setEmail(targetEmail);
+            user.setPassword(passwordEncoder.encode(rawPassword));
+            user.setRole(userRole);
         }
 
         userRepository.saveAndFlush(user);
 
         // Generate 6-digit OTP and send email via EmailService
         String otpCode = String.format("%06d", new java.security.SecureRandom().nextInt(1000000));
-        log.info("Sending OTP [{}] to email: {}", otpCode, targetEmail);
+        log.info("Sending OTP [{}] to email: {} for user: {}", otpCode, targetEmail, targetUsername);
         try {
             emailService.sendOtpEmail(targetEmail, otpCode, "REGISTRATION");
         } catch (Exception e) {
@@ -100,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
                             .password(passwordEncoder.encode("OptiNova@2026"))
                             .role(Role.CUSTOMER)
                             .build();
-                    return userRepository.save(newUser);
+                    return userRepository.saveAndFlush(newUser);
                 });
 
         String jwt = jwtTokenProvider.generateTokenFromEmail(user.getEmail());
@@ -144,9 +140,7 @@ public class AuthServiceImpl implements AuthService {
             token = token.substring(7);
         }
 
-        jwtTokenRepository.findByToken(token).ifPresent(t -> {
-            jwtTokenRepository.delete(t);
-        });
+        jwtTokenRepository.findByToken(token).ifPresent(jwtTokenRepository::delete);
 
         return ApiResponse.success("Logged out successfully.");
     }
