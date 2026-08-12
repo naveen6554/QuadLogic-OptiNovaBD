@@ -110,17 +110,21 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .or(() -> userRepository.findByUsername(request.getEmail()))
+        String identifier = request.getEmail() != null ? request.getEmail().trim() : "";
+        String inputPassword = request.getPassword() != null ? request.getPassword() : "";
+
+        User user = userRepository.findByEmail(identifier)
+                .or(() -> userRepository.findByUsername(identifier))
                 .orElseThrow(() -> new BadRequestException("Invalid email/username or password."));
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getEmail(), request.getPassword())
-        );
+        boolean matches = passwordEncoder.matches(inputPassword, user.getPassword())
+                || passwordEncoder.matches(inputPassword.trim(), user.getPassword());
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (!matches) {
+            throw new BadRequestException("Invalid email/username or password.");
+        }
 
-        String jwt = jwtTokenProvider.generateToken(authentication);
+        String jwt = jwtTokenProvider.generateTokenFromEmail(user.getEmail());
         saveUserJwtToken(user, jwt);
 
         return buildAuthResponse(user, jwt);
