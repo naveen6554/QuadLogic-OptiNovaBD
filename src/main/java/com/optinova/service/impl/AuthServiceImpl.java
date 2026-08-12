@@ -112,13 +112,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        String identifier = request.getEmail() != null ? request.getEmail().trim() : "";
+        String rawIdentifier = request.getEmail() != null ? request.getEmail().trim() : "";
         String inputPassword = request.getPassword() != null ? request.getPassword() : "";
+        String cleanIdentifier = rawIdentifier.toLowerCase();
 
-        User user = userRepository.findByEmailIgnoreCase(identifier)
-                .or(() -> userRepository.findByUsernameIgnoreCase(identifier))
-                .or(() -> userRepository.findByEmail(identifier))
-                .or(() -> userRepository.findByUsername(identifier))
+        User user = userRepository.findByUsernameIgnoreCase(rawIdentifier)
+                .or(() -> userRepository.findByEmailIgnoreCase(rawIdentifier))
+                .or(() -> userRepository.findByUsernameIgnoreCase(cleanIdentifier))
+                .or(() -> userRepository.findByEmailIgnoreCase(cleanIdentifier))
+                .or(() -> userRepository.findByUsername(rawIdentifier))
+                .or(() -> userRepository.findByEmail(rawIdentifier))
                 .orElseThrow(() -> new BadRequestException("Invalid email/username or password."));
 
         boolean matches = passwordEncoder.matches(inputPassword, user.getPassword())
