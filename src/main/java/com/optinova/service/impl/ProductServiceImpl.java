@@ -6,7 +6,6 @@ import com.optinova.dto.ProductDto;
 import com.optinova.dto.ProductRequest;
 import com.optinova.entity.Category;
 import com.optinova.entity.Product;
-import com.optinova.entity.ProductImage;
 import com.optinova.exception.ResourceNotFoundException;
 import com.optinova.mapper.ProductMapper;
 import com.optinova.repository.CategoryRepository;
