@@ -50,14 +50,15 @@ public class DataSeeder implements CommandLineRunner {
         Map<Integer, User> userMap = new HashMap<>();
 
         String defaultPass = passwordEncoder.encode("OptiPassword123");
+        String naveenPass = passwordEncoder.encode("Naveen@123");
         String adminPass = passwordEncoder.encode("OptiNova@2026");
 
         userMap.put(1, getOrCreateUser(1, "naveen01", "vk6862491@gmail.com", defaultPass, Role.CUSTOMER));
         userMap.put(3, getOrCreateUser(3, "naveen02", "kn7140990@gmail.com", defaultPass, Role.CUSTOMER));
-        userMap.put(4, getOrCreateUser(4, "Naveen10", "naveenk8815@gmail.com", defaultPass, Role.CUSTOMER));
+        userMap.put(4, getOrCreateUser(4, "Naveen10", "naveenk8815@gmail.com", naveenPass, Role.CUSTOMER));
         userMap.put(6, getOrCreateUser(6, "aakaass.h", "akashjayan2004123@gmail.com", defaultPass, Role.CUSTOMER));
         userMap.put(9, getOrCreateUser(9, "optiadmin", "optiadmin@optinova.com", adminPass, Role.ADMIN));
-        userMap.put(10, getOrCreateUser(10, "Nani10", "nani10@optinova.com", defaultPass, Role.CUSTOMER));
+        userMap.put(10, getOrCreateUser(10, "Nani10", "nani10@optinova.com", naveenPass, Role.CUSTOMER));
 
         log.info("Successfully seeded historical user accounts (including Nani10 & Naveen10) into database!");
         return userMap;
