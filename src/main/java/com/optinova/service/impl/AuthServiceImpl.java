@@ -83,7 +83,7 @@ public class AuthServiceImpl implements AuthService {
             log.warn("Email dispatch notice for {}: {}", targetEmail, e.getMessage());
         }
 
-        return ApiResponse.success("Verification OTP code sent to " + targetEmail + ". (OTP Code: " + otpCode + ")", otpCode);
+        return ApiResponse.success("Verification OTP code sent to " + targetEmail + ". Please check your email inbox.", null);
     }
 
     @Override
