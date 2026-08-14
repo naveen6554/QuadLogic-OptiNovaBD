@@ -41,7 +41,10 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         Map<Integer, User> userMap = seedAllUsers();
         seedFullCatalog();
-        seedPastOrders(userMap.get(4) != null ? userMap.get(4) : (userMap.get(10) != null ? userMap.get(10) : userMap.get(9)));
+        User targetUser = userRepository.findByUsernameIgnoreCase("Naveen10")
+                .or(() -> userRepository.findByUsernameIgnoreCase("Nani10"))
+                .orElseGet(() -> userMap.get(4) != null ? userMap.get(4) : userMap.get(9));
+        seedPastOrders(targetUser);
     }
 
     private Map<Integer, User> seedAllUsers() {
@@ -200,7 +203,18 @@ public class DataSeeder implements CommandLineRunner {
     private void seedPastOrders(User user) {
         log.info("Checking order count in database...");
         if (orderRepository.count() > 0) {
-            log.info("Historical orders already present in database. Skipping order seed.");
+            log.info("Historical orders present in database. Checking order ownership for user: {}", user != null ? user.getUsername() : "null");
+            if (user != null) {
+                List<Order> userOrders = orderRepository.findByUserUserIdOrderByCreatedAtDesc(user.getUserId());
+                if (userOrders.isEmpty()) {
+                    log.info("User {} has 0 orders. Re-associating historical orders to user {}", user.getUsername(), user.getUsername());
+                    List<Order> existingOrders = orderRepository.findAll();
+                    for (Order o : existingOrders) {
+                        o.setUser(user);
+                        orderRepository.save(o);
+                    }
+                }
+            }
             return;
         }
 
