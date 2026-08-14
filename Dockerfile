@@ -19,8 +19,6 @@ WORKDIR /app
 # Copy compiled JAR artifact from build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# Dynamic PORT binding for Railway
+# Dynamic PORT binding handled by Spring Boot server.port=${PORT:8080} in application.properties
 EXPOSE 8080
-
-# Execute Spring Boot with shell expansion so -Dserver.port=${PORT} receives Railway's assigned port
-ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -jar app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
